@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ import sistema as si
 pytestmark = [pytest.mark.integracion, pytest.mark.groq]
 
 CARPETA_APP = Path(__file__).resolve().parents[1]
+PRESUPUESTO_CASO = 4500
 
 
 def herramienta(resultado, operacion):
@@ -88,7 +90,10 @@ def contexto():
 @pytest.mark.parametrize("caso, texto, esperado_corte1, cumple, fallo", CASOS, ids=[c[0] for c in CASOS])
 def test_regresion_del_corte1(contexto, monkeypatch, caso, texto, esperado_corte1, cumple, fallo):
     sistema, token = contexto
+    time.sleep(sistema.cupo.segundos_para(PRESUPUESTO_CASO))
     if fallo:
+        while sistema.cupo.usados() > 0:
+            time.sleep(1)
         monkeypatch.setenv("MCP_FALLO_FORZADO", "1")
     conversacion = sistema.almacen.crear_conversacion(token, f"regresion-{caso}")
     resultado = asyncio.run(sistema.atender(texto, conversacion["id"], token))
@@ -103,7 +108,8 @@ def test_regresion_del_corte1(contexto, monkeypatch, caso, texto, esperado_corte
                                       "decision": h["resultado"].get("decision"), "encontrado": h["resultado"].get("encontrado"),
                                       "estado": (h["resultado"].get("registro") or {}).get("estado"), "fuente": h["resultado"].get("fuente")}
                                      for h in resultado.herramientas],
-                    "fuentes": [f["chunk_id"] for f in resultado.fuentes], "duracion_ms": traza.get("duracion_ms")}
+                    "fuentes": [f["chunk_id"] for f in resultado.fuentes], "duracion_ms": traza.get("duracion_ms"),
+                    "tokens": traza.get("tokens"), "llamadas": traza.get("llamadas")}
         carpeta = Path(os.environ["REGRESION_SALIDA"])
         carpeta.mkdir(parents=True, exist_ok=True)
         (carpeta / f"{caso}.json").write_text(json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8")
