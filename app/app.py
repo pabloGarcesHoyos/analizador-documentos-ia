@@ -35,6 +35,29 @@ CABECERA = """<script>
     "Undo": "Deshacer", "Retry": "Reintentar", "Edit": "Editar", "Close": "Cerrar", "Scroll down": "Bajar al final"};
   const prefijos = [["user's message: ", "Mensaje del usuario: "], ["bot's message: ", "Respuesta del analizador: "]];
   let plegado = false;
+  let intentos = 0;
+  let programado = false;
+  const plegar = () => {
+    programado = false;
+    const panel = document.getElementById("panel-conversaciones");
+    const boton = panel && panel.offsetParent !== null ? panel.querySelector(".label-wrap") : null;
+    if (!boton) return;
+    if (!boton.classList.contains("open")) {
+      plegado = true;
+      return;
+    }
+    if (intentos < 10) {
+      intentos += 1;
+      boton.click();
+      programar();
+    }
+  };
+  const programar = () => {
+    if (!programado) {
+      programado = true;
+      setTimeout(plegar, 250);
+    }
+  };
   const traducir = (valor) => {
     if (valor in etiquetas) return etiquetas[valor];
     for (const [ingles, espanol] of prefijos) if (valor.startsWith(ingles)) return espanol + valor.slice(ingles.length);
@@ -50,13 +73,11 @@ CABECERA = """<script>
     }
     const panel = document.getElementById("panel-conversaciones");
     if (panel && panel.offsetParent !== null) {
-      if (!plegado && window.innerWidth < 768) {
-        const boton = panel.querySelector(".label-wrap");
-        if (boton && boton.classList.contains("open")) boton.click();
-      }
-      plegado = true;
+      if (window.innerWidth >= 768) plegado = true;
+      if (!plegado) programar();
     } else {
       plegado = false;
+      intentos = 0;
     }
   };
   new MutationObserver(ajustar).observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ["aria-label", "title"]});
@@ -222,9 +243,11 @@ def sesion_valida(sesion: Any) -> bool:
         and isinstance(sesion.get("refresh_token"), str) and isinstance(sesion.get("expira_en"), (int, float))
 
 
-def exigir_sesion(sesion: Any, *resto: Any) -> None:
+def exigir_sesion(sesion: Any, *resto: Any) -> Any:
     if not sesion_valida(sesion):
         raise gr.Error(SESION_NO_VALIDA, print_exception=False)
+    validos = [gr.validate(True, "") for _ in range(1 + len(resto))]
+    return validos[0] if len(validos) == 1 else validos
 
 
 class BloqueoApi:

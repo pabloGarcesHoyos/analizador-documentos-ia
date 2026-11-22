@@ -502,7 +502,8 @@ def test_indicador_unico_al_recargar(entorno):
                                             ({"access_token": "x", "refresh_token": "y", "expira_en": 1.0}, True)])
 def test_validador_exige_sesion(sesion, valida):
     if valida:
-        ap.exigir_sesion(sesion, "otro")
+        assert ap.exigir_sesion(sesion, "otro") == [gr.validate(True, ""), gr.validate(True, "")]
+        assert ap.exigir_sesion(sesion) == gr.validate(True, "")
     else:
         with pytest.raises(gr.Error):
             ap.exigir_sesion(sesion, "otro")

@@ -97,3 +97,16 @@ def test_inicio_de_sesion_por_la_cola_solo_devuelve_el_aviso(servidor):
     assert respuesta.status_code == 200
     final = json.dumps(resultado_de_la_cola(url, sesion), ensure_ascii=False)
     assert "No se pudo iniciar sesión" in final and "access_token" not in final and "token-a" not in final
+
+
+def test_cola_con_sesion_valida_si_ejecuta_los_eventos(servidor):
+    demo, url = servidor
+    sesion = uuid.uuid4().hex[:11]
+    inicio = next(i for i, f in demo.fns.items() if f.validator is None)
+    assert unirse(url, inicio, ["a@prueba.local", "clave-a-secreta"], sesion).status_code == 200
+    resultado_de_la_cola(url, sesion)
+    nueva = next(i for i, f in demo.fns.items() if f.validator is not None and len(f.inputs) == 1 and len(f.outputs) == 8)
+    respuesta = unirse(url, nueva, [None], sesion)
+    assert respuesta.status_code == 200, respuesta.text
+    final = resultado_de_la_cola(url, sesion)
+    assert final["success"] is True and "se guardará al enviar la primera pregunta" in json.dumps(final, ensure_ascii=False)
