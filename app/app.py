@@ -1,5 +1,7 @@
 import asyncio
 import hashlib
+import inspect
+import re
 import sys
 import tempfile
 import time
@@ -7,6 +9,8 @@ from pathlib import Path
 from typing import Any
 
 import gradio as gr
+from starlette.middleware import Middleware
+from starlette.responses import JSONResponse
 
 import almacenamiento as al
 import sistema as si
@@ -18,6 +22,46 @@ CONCURRENCIA_GENERAL = 2
 MAX_COLA = 16
 LIMPIEZA_ARCHIVOS = (1800, 1800)
 TITULO_APP = "Analizador de Documentos"
+TAMANO_PAGINA = 20
+PROCESANDO = "Procesando tu consulta…"
+ESPERANDO_CUPO = "Esperando cupo del proveedor del modelo…"
+SESION_NO_VALIDA = "Sesión no válida."
+RUTAS_BLOQUEADAS = re.compile(r"^/gradio_api/(run|api|call|info|openapi\.json|mcp|upload|upload_progress|deep_link|run-history|runs|monitoring)(/|$)"
+                              r"|^/(monitoring|runs)(/|$)")
+CABECERA = """<script>
+(() => {
+  const etiquetas = {"chatbot conversation": "Conversación con el analizador", "Clear": "Borrar", "Copy": "Copiar", "Copy message": "Copiar mensaje",
+    "Copy conversation": "Copiar conversación", "Download": "Descargar", "Loading": "Cargando", "Share": "Compartir", "Remove": "Quitar",
+    "Undo": "Deshacer", "Retry": "Reintentar", "Edit": "Editar", "Close": "Cerrar", "Scroll down": "Bajar al final"};
+  const prefijos = [["user's message: ", "Mensaje del usuario: "], ["bot's message: ", "Respuesta del analizador: "]];
+  let plegado = false;
+  const traducir = (valor) => {
+    if (valor in etiquetas) return etiquetas[valor];
+    for (const [ingles, espanol] of prefijos) if (valor.startsWith(ingles)) return espanol + valor.slice(ingles.length);
+    return valor;
+  };
+  const ajustar = () => {
+    for (const atributo of ["aria-label", "title"]) {
+      document.querySelectorAll("[" + atributo + "]").forEach((elemento) => {
+        const actual = elemento.getAttribute(atributo);
+        const nuevo = traducir(actual);
+        if (nuevo !== actual) elemento.setAttribute(atributo, nuevo);
+      });
+    }
+    const panel = document.getElementById("panel-conversaciones");
+    if (panel && panel.offsetParent !== null) {
+      if (!plegado && window.innerWidth < 768) {
+        const boton = panel.querySelector(".label-wrap");
+        if (boton && boton.classList.contains("open")) boton.click();
+      }
+      plegado = true;
+    } else {
+      plegado = false;
+    }
+  };
+  new MutationObserver(ajustar).observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ["aria-label", "title"]});
+})();
+</script>"""
 
 ESTADOS = {
     "RESPONDIDA": "Respondida con evidencia de los documentos.",
@@ -155,9 +199,43 @@ def _controles(activos: bool) -> dict:
     return {nombre: gr.update(interactive=activos) for nombre in ("entrada", "enviar", "nueva", "salir", "lista")}
 
 
+def es_actualizacion(valor: Any) -> bool:
+    return isinstance(valor, dict) and valor.get("__type__") == "update"
+
+
+def unir(*partes: dict) -> dict:
+    salida: dict = {}
+    for parte in partes:
+        for clave, valor in parte.items():
+            salida[clave] = {**salida[clave], **valor} if es_actualizacion(valor) and es_actualizacion(salida.get(clave)) else valor
+    return salida
+
+
 def vista_inicio(mensaje: str = "") -> dict:
     return {"sesion": None, "conversacion": None, "vista_login": gr.update(visible=True), "vista_app": _oculto(), "aviso_login": mensaje,
-            "clave": "", "usuario": "", "chat": [], "indicador": "", "lista": gr.update(choices=[], value=None), **_informe_oculto()}
+            "clave": "", "usuario": "", "chat": [], "indicador": "", "lista": gr.update(choices=[], value=None), "limite": TAMANO_PAGINA,
+            "ver_mas": gr.update(visible=False), **_informe_oculto()}
+
+
+def sesion_valida(sesion: Any) -> bool:
+    return isinstance(sesion, dict) and isinstance(sesion.get("access_token"), str) and bool(sesion["access_token"]) \
+        and isinstance(sesion.get("refresh_token"), str) and isinstance(sesion.get("expira_en"), (int, float))
+
+
+def exigir_sesion(sesion: Any, *resto: Any) -> None:
+    if not sesion_valida(sesion):
+        raise gr.Error(SESION_NO_VALIDA, print_exception=False)
+
+
+class BloqueoApi:
+    def __init__(self, aplicacion):
+        self.aplicacion = aplicacion
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and RUTAS_BLOQUEADAS.match(scope.get("path", "")):
+            await JSONResponse({"detail": "No disponible."}, status_code=404)(scope, receive, send)
+            return
+        await self.aplicacion(scope, receive, send)
 
 
 def opciones_lista(conversaciones: list[dict]) -> list[tuple[str, str]]:
@@ -181,24 +259,42 @@ class Interfaz:
         nueva["correo"] = nueva["correo"] or sesion.get("correo", "")
         return nueva
 
+    def _lista(self, token: str, conversacion: str | None, limite: int) -> dict:
+        limite = max(TAMANO_PAGINA, min(int(limite or TAMANO_PAGINA), al.MAX_CONVERSACIONES))
+        conversaciones = self.almacen.listar_conversaciones(token, min(limite + 1, al.MAX_CONVERSACIONES))
+        hay_mas = len(conversaciones) > limite
+        visibles = conversaciones[:limite]
+        if conversacion and conversacion not in [c["id"] for c in visibles]:
+            conversacion = None
+        return {"lista": gr.update(choices=opciones_lista(visibles), value=conversacion), "ver_mas": gr.update(visible=hay_mas), "limite": limite}
+
     def entrar(self, correo: str, clave: str) -> dict:
         try:
             sesion = self.autenticacion.iniciar_sesion(correo, clave).como_estado()
-            conversaciones = self.almacen.listar_conversaciones(sesion["access_token"])
+            lista = self._lista(sesion["access_token"], None, TAMANO_PAGINA)
         except (al.CredencialesInvalidas, al.ServicioNoDisponible, al.SesionInvalida) as error:
             return {"sesion": None, "clave": "", "aviso_login": str(error)}
         except al.ErrorAlmacenamiento:
             return {"sesion": None, "clave": "", "aviso_login": "No se pudo cargar tu historial por un error técnico; intenta de nuevo."}
-        return {"sesion": sesion, "conversacion": None, "clave": "", "aviso_login": "", "vista_login": _oculto(), "vista_app": gr.update(visible=True),
-                "usuario": f"Sesión iniciada como {sesion['correo']}", "lista": gr.update(choices=opciones_lista(conversaciones), value=None),
-                "chat": [], "indicador": AVISO_INICIO, **_informe_oculto()}
+        return unir(_controles(True), {"sesion": sesion, "conversacion": None, "clave": "", "aviso_login": "", "vista_login": _oculto(),
+                                        "vista_app": gr.update(visible=True), "usuario": f"Sesión iniciada como {sesion['correo']}", "chat": [],
+                                        "indicador": AVISO_INICIO, **_informe_oculto()}, lista)
+
+    def ver_mas(self, sesion: dict | None, limite: int, conversacion: str | None) -> dict:
+        try:
+            sesion = self._vigente(sesion)
+            return {"sesion": sesion, **self._lista(sesion["access_token"], conversacion, (limite or TAMANO_PAGINA) + TAMANO_PAGINA)}
+        except al.SesionInvalida:
+            return vista_inicio(AVISO_VENCIDA)
+        except al.ErrorAlmacenamiento:
+            return {"sesion": sesion, "indicador": "No se pudo cargar la lista de conversaciones por un error técnico; intenta de nuevo."}
 
     def salir(self, sesion: dict | None) -> dict:
         if sesion and sesion.get("access_token"):
             self.autenticacion.cerrar_sesion(sesion["access_token"], sesion.get("refresh_token", ""))
         return vista_inicio("Sesión cerrada.")
 
-    def nueva(self) -> dict:
+    def nueva(self, sesion: dict | None = None) -> dict:
         return {"conversacion": None, "chat": [], "lista": gr.update(value=None), "indicador": "Conversación nueva: se guardará al enviar la primera pregunta.",
                 **_informe_oculto()}
 
@@ -224,24 +320,36 @@ class Interfaz:
                 chat.append(mensaje_decision(propuesta["destino"], decisiones[fila["id"]]))
             elif propuesta:
                 pendiente = (fila["id"], propuesta)
-        ultimo = next((f.get("estado") for f in reversed(filas) if f.get("rol") == "asistente"), None)
-        indicador = f"Conversación cargada. Última respuesta: {texto_estado(ultimo)}" if ultimo else "Conversación cargada, todavía sin mensajes."
-        salida = {"sesion": sesion, "conversacion": conversacion_id, "chat": chat, "indicador": indicador, **_informe_oculto()}
+        ultimo = next((f for f in reversed(filas) if f.get("rol") == "asistente"), None)
         panel = panel_propuesta(conversacion_id, pendiente[0], pendiente[1]) if pendiente else {}
-        if panel:
-            salida.update(panel)
-            salida["indicador"] += " Hay una propuesta de informe sin decidir."
+        salida = {"sesion": sesion, "conversacion": conversacion_id, "chat": chat, "indicador": indicador_recarga(ultimo, bool(panel), decisiones),
+                  **_informe_oculto()}
+        salida.update(panel)
         return salida
 
-    def bloquear(self, texto: str, chat: list[dict]) -> dict:
+    def bloquear(self, sesion: dict | None, texto: str, chat: list[dict]) -> dict:
         if not (texto or "").strip():
             return {}
-        return {**_controles(False), "chat": list(chat or []) + [{"role": "user", "content": texto}], "indicador": "Atendiendo tu pregunta..."}
+        return {**_controles(False), "chat": list(chat or []) + [{"role": "user", "content": texto}], "indicador": PROCESANDO}
 
-    def desbloquear(self) -> dict:
-        return _controles(True)
+    async def responder_en_vivo(self, sesion: dict | None, conversacion: str | None, texto: str, chat: list[dict], limite: int = TAMANO_PAGINA):
+        avisos: asyncio.Queue = asyncio.Queue()
+        tarea = asyncio.ensure_future(self.responder(sesion, conversacion, texto, chat, limite, al_esperar=avisos.put_nowait))
+        while not tarea.done():
+            siguiente = asyncio.ensure_future(avisos.get())
+            listos, _ = await asyncio.wait({tarea, siguiente}, return_when=asyncio.FIRST_COMPLETED)
+            if siguiente in listos:
+                yield {"indicador": ESPERANDO_CUPO}
+            else:
+                siguiente.cancel()
+        try:
+            final = tarea.result()
+        except Exception:
+            final = {"indicador": ESTADOS["ERROR_TECNICO"]}
+        yield unir(_controles(True), final)
 
-    async def responder(self, sesion: dict | None, conversacion: str | None, texto: str, chat: list[dict]) -> dict:
+    async def responder(self, sesion: dict | None, conversacion: str | None, texto: str, chat: list[dict], limite: int = TAMANO_PAGINA,
+                        al_esperar: Any = None) -> dict:
         texto = texto or ""
         if not texto.strip():
             return {"indicador": "Escribe una pregunta antes de enviar."}
@@ -254,7 +362,7 @@ class Interfaz:
             return vista_inicio(AVISO_VENCIDA)
         except al.ErrorAlmacenamiento:
             return {"sesion": sesion, "chat": list(chat or [])[:-1], "indicador": "No se pudo crear la conversación por un error técnico; intenta de nuevo."}
-        resultado = await self.sistema.atender(texto, conversacion, token)
+        resultado = await self.sistema.atender(texto, conversacion, token, al_esperar=al_esperar)
         if resultado.estado == "SESION_INVALIDA":
             return vista_inicio(AVISO_VENCIDA)
         chat = list(chat or [])
@@ -265,17 +373,16 @@ class Interfaz:
         if not resultado.persistido:
             indicador += " Este turno no se pudo guardar en el historial."
         salida = {"sesion": sesion, "conversacion": conversacion, "chat": chat, "indicador": indicador,
-                  "entrada": "" if resultado.estado != "ERROR_ENTRADA" else texto, **_informe_oculto()}
+                  "entrada": gr.update(value="" if resultado.estado != "ERROR_ENTRADA" else texto), **_informe_oculto()}
         try:
-            conversaciones = await asyncio.to_thread(self.almacen.listar_conversaciones, token)
-            salida["lista"] = gr.update(choices=opciones_lista(conversaciones), value=conversacion)
+            salida.update(await asyncio.to_thread(self._lista, token, conversacion, limite))
         except al.ErrorAlmacenamiento:
             pass
         if resultado.propuesta_informe and resultado.persistido and resultado.mensaje_id:
             salida.update(panel_propuesta(conversacion, resultado.mensaje_id, resultado.propuesta_informe))
         return salida
 
-    def bloquear_informe(self) -> dict:
+    def bloquear_informe(self, sesion: dict | None = None) -> dict:
         return {"aprobar": gr.update(interactive=False), "rechazar": gr.update(interactive=False)}
 
     async def aprobar(self, sesion: dict | None, propuesta: dict | None, chat: list[dict] | None = None) -> dict:
@@ -346,6 +453,16 @@ class Interfaz:
                 "aviso_informe": "Informe aprobado, escrito y verificado. Descárgalo ahora: el servidor no guarda los informes de forma permanente."}
 
 
+def indicador_recarga(ultimo: dict | None, pendiente: bool, decisiones: dict) -> str:
+    if pendiente:
+        return "Conversación cargada. Hay una propuesta de informe que espera tu aprobación."
+    if not ultimo:
+        return "Conversación cargada, todavía sin mensajes."
+    if ultimo.get("estado") == "PROPUESTA_INFORME" and ultimo.get("id") in decisiones:
+        return "Conversación cargada. La propuesta de informe ya tiene una decisión registrada."
+    return f"Conversación cargada. Última respuesta: {texto_estado(ultimo.get('estado'))}"
+
+
 def _quitar_nota(chat: list[dict], nota: dict) -> list[dict]:
     return chat[:-1] if chat and chat[-1] == nota else chat
 
@@ -355,7 +472,11 @@ def _mapear(resultado: dict, componentes: dict) -> dict:
 
 
 def _envolver(funcion, componentes: dict):
-    if asyncio.iscoroutinefunction(funcion):
+    if inspect.isasyncgenfunction(funcion):
+        async def envuelta(*argumentos):
+            async for parcial in funcion(*argumentos):
+                yield _mapear(parcial, componentes)
+    elif asyncio.iscoroutinefunction(funcion):
         async def envuelta(*argumentos):
             return _mapear(await funcion(*argumentos), componentes)
     else:
@@ -366,7 +487,7 @@ def _envolver(funcion, componentes: dict):
 
 def construir(interfaz: Interfaz) -> gr.Blocks:
     with gr.Blocks(title=TITULO_APP, delete_cache=LIMPIEZA_ARCHIVOS) as demo:
-        c: dict[str, Any] = {"sesion": gr.State(None), "conversacion": gr.State(None), "propuesta": gr.State(None)}
+        c: dict[str, Any] = {"sesion": gr.State(None), "conversacion": gr.State(None), "propuesta": gr.State(None), "limite": gr.State(TAMANO_PAGINA)}
         with gr.Column(visible=True) as vista_login:
             gr.Markdown(f"# {TITULO_APP}\n\nInicia sesión con tu cuenta para consultar políticas, estados de documentos y solicitudes.")
             c["correo"] = gr.Textbox(label="Correo", type="email", max_lines=1)
@@ -377,11 +498,13 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
             with gr.Column(scale=1, min_width=220):
                 c["usuario"] = gr.Markdown("")
                 c["nueva"] = gr.Button("Nueva conversación")
-                c["lista"] = gr.Radio(label="Tus conversaciones", choices=[], value=None)
+                with gr.Accordion("Tus conversaciones", open=True, elem_id="panel-conversaciones"):
+                    c["lista"] = gr.Radio(label="Conversaciones recientes", choices=[], value=None)
+                    c["ver_mas"] = gr.Button("Ver más", visible=False, size="sm")
                 c["salir"] = gr.Button("Cerrar sesión", variant="secondary")
             with gr.Column(scale=3):
                 c["indicador"] = gr.Markdown("")
-                c["chat"] = gr.Chatbot(label="Conversación", height=520, sanitize_html=True)
+                c["chat"] = gr.Chatbot(label="Conversación", height=520, sanitize_html=True, buttons=[], feedback_options=None)
                 with gr.Row():
                     c["entrada"] = gr.Textbox(label="Pregunta", placeholder="Escribe tu pregunta o pega el texto de un documento", lines=2, scale=4)
                     c["enviar"] = gr.Button("Enviar", variant="primary", scale=1)
@@ -395,27 +518,39 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
                     c["aviso_informe"] = gr.Markdown("")
                     c["archivo"] = gr.File(label="Informe para descargar", visible=False, interactive=False)
         c.update(vista_login=vista_login, vista_app=vista_app, informe=informe)
-        todo = [c[n] for n in ("sesion", "conversacion", "propuesta", "vista_login", "vista_app", "aviso_login", "clave", "usuario", "chat",
-                               "indicador", "lista", "informe", "archivo", "aviso_informe")]
+        todo = [c[n] for n in ("sesion", "conversacion", "propuesta", "limite", "vista_login", "vista_app", "aviso_login", "clave", "usuario", "chat",
+                               "indicador", "lista", "ver_mas", "informe", "archivo", "aviso_informe")]
         controles = [c[n] for n in ("entrada", "enviar", "nueva", "salir", "lista")]
         informe_salidas = [c[n] for n in ("informe_destino", "informe_contenido", "aprobar", "rechazar")]
-        privado = {"api_visibility": "private"}
+        comun = {"api_visibility": "private", "show_progress": "hidden"}
+        protegido = {**comun, "validator": exigir_sesion}
         for disparador in (c["entrar"].click, c["clave"].submit):
-            disparador(_envolver(interfaz.entrar, c), [c["correo"], c["clave"]], todo, concurrency_limit=CONCURRENCIA_GENERAL, **privado)
-        c["salir"].click(_envolver(interfaz.salir, c), [c["sesion"]], todo, **privado)
-        c["nueva"].click(_envolver(interfaz.nueva, c), None, [c["conversacion"], c["chat"], c["lista"], c["indicador"], c["propuesta"], c["informe"],
-                                                            c["archivo"], c["aviso_informe"]], queue=False, **privado)
-        c["lista"].input(_envolver(interfaz.seleccionar, c), [c["sesion"], c["lista"]], todo + informe_salidas, concurrency_limit=CONCURRENCIA_GENERAL, **privado)
+            disparador(_envolver(interfaz.entrar, c), [c["correo"], c["clave"]], todo + controles, concurrency_limit=CONCURRENCIA_GENERAL, **comun)
+        c["salir"].click(_envolver(interfaz.salir, c), [c["sesion"]], todo, **protegido)
+        c["nueva"].click(_envolver(interfaz.nueva, c), [c["sesion"]], [c["conversacion"], c["chat"], c["lista"], c["indicador"], c["propuesta"],
+                                                                    c["informe"], c["archivo"], c["aviso_informe"]], **protegido)
+        c["ver_mas"].click(_envolver(interfaz.ver_mas, c), [c["sesion"], c["limite"], c["conversacion"]], todo, concurrency_limit=CONCURRENCIA_GENERAL,
+                           **protegido)
+        c["lista"].input(_envolver(interfaz.seleccionar, c), [c["sesion"], c["lista"]], todo + informe_salidas, concurrency_limit=CONCURRENCIA_GENERAL,
+                         **protegido)
         for disparador in (c["enviar"].click, c["entrada"].submit):
-            (disparador(_envolver(interfaz.bloquear, c), [c["entrada"], c["chat"]], controles + [c["chat"], c["indicador"]], queue=False, **privado)
-             .then(_envolver(interfaz.responder, c), [c["sesion"], c["conversacion"], c["entrada"], c["chat"]], todo + [c["entrada"]] + informe_salidas,
-                   concurrency_limit=CONCURRENCIA_ATENCION, concurrency_id="atencion", show_progress="minimal", **privado)
-             .then(_envolver(interfaz.desbloquear, c), None, controles, queue=False, **privado))
+            (disparador(_envolver(interfaz.bloquear, c), [c["sesion"], c["entrada"], c["chat"]], controles + [c["chat"], c["indicador"]], **protegido)
+             .then(_envolver(interfaz.responder_en_vivo, c), [c["sesion"], c["conversacion"], c["entrada"], c["chat"], c["limite"]],
+                   todo + controles + informe_salidas, concurrency_limit=CONCURRENCIA_ATENCION, concurrency_id="atencion", **protegido))
         for boton, manejador in ((c["aprobar"], interfaz.aprobar), (c["rechazar"], interfaz.rechazar)):
-            (boton.click(_envolver(interfaz.bloquear_informe, c), None, [c["aprobar"], c["rechazar"]], queue=False, **privado)
+            (boton.click(_envolver(interfaz.bloquear_informe, c), [c["sesion"]], [c["aprobar"], c["rechazar"]], **protegido)
              .then(_envolver(manejador, c), [c["sesion"], c["propuesta"], c["chat"]], todo + [c["aprobar"], c["rechazar"]],
-                   concurrency_limit=CONCURRENCIA_ATENCION, concurrency_id="atencion", **privado))
+                   concurrency_limit=CONCURRENCIA_ATENCION, concurrency_id="atencion", **protegido))
     return demo
+
+
+def opciones_lanzamiento(servidor: str, puerto: int) -> dict:
+    return {"server_name": servidor, "server_port": puerto, "share": False, "show_error": False, "footer_links": [], "head": CABECERA,
+            "app_kwargs": {"middleware": [Middleware(BloqueoApi)]}}
+
+
+def preparar(demo: gr.Blocks) -> gr.Blocks:
+    return demo.queue(default_concurrency_limit=CONCURRENCIA_GENERAL, max_size=MAX_COLA, api_open=False)
 
 
 def cargar_configuracion(entorno: dict[str, str]) -> tuple[si.ConfiguracionSistema, str, int]:
@@ -436,9 +571,8 @@ def main() -> None:
     descargar_modelos.asegurar()
     sistema = si.Sistema(configuracion)
     interfaz = Interfaz(al.Autenticacion(configuracion.supabase), sistema.almacen, sistema)
-    demo = construir(interfaz)
-    demo.queue(default_concurrency_limit=CONCURRENCIA_GENERAL, max_size=MAX_COLA, api_open=False)
-    demo.launch(server_name=servidor, server_port=puerto, share=False, show_error=False, footer_links=[])
+    demo = preparar(construir(interfaz))
+    demo.launch(**opciones_lanzamiento(servidor, puerto))
 
 
 if __name__ == "__main__":

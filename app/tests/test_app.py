@@ -73,6 +73,10 @@ class EscritorDisco:
 
 @pytest.fixture
 def entorno(tmp_path):
+    return crear_entorno(tmp_path)
+
+
+def crear_entorno(tmp_path):
     reloj = Reloj()
     base = BaseFalsa({"token-a": str(uuid.uuid4()), "token-b": str(uuid.uuid4())})
     configuracion = si.ConfiguracionSistema(al.ConfiguracionSupabase("https://p.supabase.co", "sb_publishable_x"), "clave-de-prueba", "corpus",
@@ -191,7 +195,7 @@ def test_primera_pregunta_crea_la_conversacion_con_titulo_automatico(entorno):
     conversaciones = entorno.almacen.listar_conversaciones(sesion["access_token"])
     assert conversaciones[0]["id"] == salida["conversacion"] and conversaciones[0]["titulo"] == ap.titulo_automatico(texto)
     assert ap.titulo_automatico(texto).endswith("...") and len(ap.titulo_automatico(texto)) <= ap.LARGO_TITULO + 3
-    assert ap.titulo_automatico("  Hola\n  mundo ") == "Hola mundo" and salida["entrada"] == ""
+    assert ap.titulo_automatico("  Hola\n  mundo ") == "Hola mundo" and salida["entrada"]["value"] == ""
     segunda = responder(entorno, sesion, "¿Y el NIT?", salida["conversacion"], salida["chat"])
     assert segunda["conversacion"] == salida["conversacion"] and len(entorno.almacen.listar_conversaciones(sesion["access_token"])) == 1
 
@@ -228,11 +232,10 @@ def test_error_tecnico_se_presenta_como_tal(entorno):
 
 
 def test_entrada_se_bloquea_mientras_atiende(entorno):
-    bloqueo = entorno.interfaz.bloquear("Hola", [])
+    bloqueo = entorno.interfaz.bloquear(None, "Hola", [])
     assert all(not bloqueo[n]["interactive"] for n in ("entrada", "enviar", "nueva", "salir", "lista"))
-    assert bloqueo["chat"] == [{"role": "user", "content": "Hola"}]
-    assert all(entorno.interfaz.desbloquear()[n]["interactive"] for n in ("entrada", "enviar", "nueva", "salir", "lista"))
-    assert entorno.interfaz.bloquear("   ", []) == {}
+    assert bloqueo["chat"] == [{"role": "user", "content": "Hola"}] and bloqueo["indicador"] == "Procesando tu consulta…"
+    assert entorno.interfaz.bloquear(None, "   ", []) == {}
     assert responder(entorno, entrar(entorno), "   ") == {"indicador": "Escribe una pregunta antes de enviar."}
 
 
@@ -384,7 +387,7 @@ def test_propuesta_sin_decidir_se_vuelve_a_ofrecer_al_recargar(entorno):
     assert recargada["chat"] == en_vivo["chat"] and recargada["propuesta"] == en_vivo["propuesta"]
     assert recargada["informe"]["visible"] and recargada["aprobar"]["interactive"] and recargada["rechazar"]["interactive"]
     assert recargada["informe_contenido"] == en_vivo["informe_contenido"] and recargada["informe_destino"] == en_vivo["informe_destino"]
-    assert "propuesta de informe sin decidir" in recargada["indicador"]
+    assert recargada["indicador"] == "Conversación cargada. Hay una propuesta de informe que espera tu aprobación."
     salida = asyncio.run(entorno.interfaz.aprobar(sesion, recargada["propuesta"], recargada["chat"]))
     assert salida["archivo"]["visible"] and len(entorno.escritor.escrituras) == 1
 
@@ -438,3 +441,68 @@ def test_la_sesion_renovada_se_devuelve_tambien_en_los_caminos_de_error(entorno)
     denegada = entorno.interfaz.seleccionar(repetida["sesion"], ajena)
     assert denegada["sesion"]["access_token"] not in (sesion["access_token"], repetida["sesion"]["access_token"])
     assert denegada["indicador"] == ap.ESTADOS["ACCESO_DENEGADO"]
+
+
+def en_vivo(e, sesion, texto, conversacion=None, chat=None):
+    async def recorrer():
+        return [parcial async for parcial in e.interfaz.responder_en_vivo(sesion, conversacion, texto, chat or [])]
+    return asyncio.run(recorrer())
+
+
+def test_en_vivo_muestra_la_espera_de_cupo_y_reactiva_los_controles(entorno):
+    original = entorno.sistema.atender
+
+    async def con_espera(texto, conversacion, token, al_esperar=None):
+        al_esperar(30.0)
+        await asyncio.sleep(0.05)
+        return await original(texto, conversacion, token, al_esperar=al_esperar)
+
+    entorno.sistema.atender = con_espera
+    parciales = en_vivo(entorno, entrar(entorno), "¿Qué datos debe traer una factura?")
+    assert parciales[0] == {"indicador": "Esperando cupo del proveedor del modelo…"}
+    final = parciales[-1]
+    assert final["indicador"] == ap.ESTADOS["RESPONDIDA"] and all(final[n]["interactive"] for n in ("entrada", "enviar", "nueva", "salir", "lista"))
+    assert final["lista"]["choices"] and final["lista"]["value"] == final["conversacion"]
+
+
+def test_en_vivo_reactiva_los_controles_aunque_falle(entorno):
+    async def falla(*argumentos, **opciones):
+        raise RuntimeError("inesperado")
+
+    entorno.sistema.atender = falla
+    final = en_vivo(entorno, entrar(entorno), "¿Qué datos debe traer una factura?")[-1]
+    assert final["indicador"] == ap.ESTADOS["ERROR_TECNICO"] and all(final[n]["interactive"] for n in ("entrada", "enviar", "nueva", "salir", "lista"))
+
+
+def test_lista_muestra_veinte_y_ver_mas_agrega_otras_veinte(entorno):
+    for numero in range(45):
+        entorno.almacen.crear_conversacion("token-a", f"Conversación {numero:02d}")
+    salida = entorno.interfaz.entrar("a@prueba.local", CLAVES["a@prueba.local"])
+    assert len(salida["lista"]["choices"]) == 20 and salida["ver_mas"]["visible"] and salida["lista"]["interactive"]
+    mas = entorno.interfaz.ver_mas(salida["sesion"], salida["limite"], None)
+    assert len(mas["lista"]["choices"]) == 40 and mas["ver_mas"]["visible"] and mas["limite"] == 40
+    todas = entorno.interfaz.ver_mas(mas["sesion"], mas["limite"], None)
+    assert len(todas["lista"]["choices"]) == 45 and not todas["ver_mas"]["visible"]
+    pocas = entorno.interfaz.entrar("b@prueba.local", CLAVES["b@prueba.local"])
+    assert pocas["lista"]["choices"] == [] and not pocas["ver_mas"]["visible"]
+
+
+def test_indicador_unico_al_recargar(entorno):
+    sesion, en_vivo_propuesta = proponer_en_vivo(entorno)
+    pendiente = entorno.interfaz.seleccionar(sesion, en_vivo_propuesta["conversacion"])["indicador"]
+    assert pendiente == "Conversación cargada. Hay una propuesta de informe que espera tu aprobación."
+    asyncio.run(entorno.interfaz.rechazar(sesion, en_vivo_propuesta["propuesta"], en_vivo_propuesta["chat"]))
+    decidida = entorno.interfaz.seleccionar(sesion, en_vivo_propuesta["conversacion"])["indicador"]
+    assert decidida == "Conversación cargada. La propuesta de informe ya tiene una decisión registrada."
+    for texto in (pendiente, decidida):
+        assert texto.count("informe") == 1 and texto.count("Conversación cargada") == 1
+
+
+@pytest.mark.parametrize("sesion, valida", [(None, False), ({}, False), ({"access_token": "x"}, False), ("token", False),
+                                            ({"access_token": "x", "refresh_token": "y", "expira_en": 1.0}, True)])
+def test_validador_exige_sesion(sesion, valida):
+    if valida:
+        ap.exigir_sesion(sesion, "otro")
+    else:
+        with pytest.raises(gr.Error):
+            ap.exigir_sesion(sesion, "otro")
