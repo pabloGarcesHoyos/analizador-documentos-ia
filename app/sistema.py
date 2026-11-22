@@ -23,7 +23,7 @@ SERVIDOR_MCP = CARPETA_APP / "servidor_mcp.py"
 SCRIPT_MCP_ARCHIVOS = CARPETA_APP / "mcp_archivos/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"
 CARPETA_INFORMES = CARPETA_APP / "informes"
 MODELO_GENERATIVO = "openai/gpt-oss-20b"
-MAX_OPERACIONES, MAX_DECISIONES, TURNOS_CONTEXTO = 2, 3, 4
+MAX_OPERACIONES, MAX_DECISIONES, REINTENTOS_REDACCION, TURNOS_CONTEXTO = 2, 3, 1, 4
 MAX_SEGUNDOS, MAX_CONTEXTO = 90, 24000
 MAX_ENTRADA, MAX_CONSULTA, MAX_RESPUESTA, MAX_LIMITACION = 1200, 500, 2500, 600
 TIEMPO_GROQ, TIEMPO_MCP = 25, 15
@@ -68,7 +68,7 @@ Acciones disponibles:
 Orden y límites:
 - Si necesitas políticas, la primera acción es buscar_documentos. Si el usuario da un código, usa consultar_estado_solicitud.
 - No repitas una operación con los mismos argumentos. Revisa "observaciones_del_turno" antes de decidir.
-- Cada turno admite como máximo 2 operaciones y 3 decisiones.
+- Cada turno admite como máximo 2 operaciones y 3 decisiones. Si una salida final se rechaza, tendrás una sola oportunidad de redactarla de nuevo.
 - Para buscar_documentos, consultar_estado_solicitud y clasificar_documento deja "respuesta", "limitacion" y "citas" vacíos y usa "estado": "no_aplica".
 
 Reglas de redacción:
@@ -134,6 +134,12 @@ class InformeNoAutorizado(ErrorSistema):
 
 class Detencion(Exception):
     pass
+
+
+class DecisionInvalida(Exception):
+    def __init__(self, motivo: str, accion: Any = None):
+        super().__init__(motivo)
+        self.accion = accion
 
 
 class Decision(BaseModel):
@@ -421,10 +427,21 @@ class Sistema:
                                "limites_restantes": restantes, "observaciones_del_turno": observaciones}, ensure_ascii=False)
         if len(contexto) > MAX_CONTEXTO:
             raise Detencion("LIMITE_CONTEXTO")
-        contenido, uso = await self.llm.completar([{"role": "system", "content": PROMPT_AGENTE}, {"role": "user", "content": contexto}],
-                                                  "decision_agente", Decision.model_json_schema())
+        traza["llamadas_modelo"] += 1
+        try:
+            contenido, uso = await self.llm.completar([{"role": "system", "content": PROMPT_AGENTE}, {"role": "user", "content": contexto}],
+                                                      "decision_agente", Decision.model_json_schema())
+        except ValueError as error:
+            raise DecisionInvalida(str(error)) from None
         traza["uso_tokens"].append(uso)
-        return Decision.model_validate_json(contenido)
+        try:
+            return Decision.model_validate_json(contenido)
+        except ValidationError as error:
+            try:
+                accion = json.loads(contenido).get("accion")
+            except (ValueError, AttributeError):
+                accion = None
+            raise DecisionInvalida(str(error).splitlines()[0], accion) from None
 
     async def _clasificar(self, texto: str, traza: dict) -> dict:
         mensajes = [{"role": "system", "content": PROMPT_CLASIFICADOR},
@@ -438,28 +455,64 @@ class Sistema:
         decision, analisis, motivo = validar_y_decidir_clasificacion(datos, texto)
         return {"decision": decision, "motivo": motivo, "clasificacion": analisis.model_dump() if analisis else None, "fuente": FUENTE_CLASIFICADOR}
 
+    def _rechazo(self, traza: dict, paso: int, tipo: str, motivo: str) -> str:
+        motivo = motivo.splitlines()[0][:300]
+        traza["eventos"].append({"paso": paso, "etapa": "DECISION_RECHAZADA", "tipo": tipo, "motivo": motivo})
+        return motivo
+
+    async def _reintentar_redaccion(self, texto: str, memoria: list[dict], permitidos: set[str], observaciones: list[dict],
+                                    catalogo: dict[str, dict], motivo: str, paso: int, traza: dict) -> tuple[Decision, list[str]]:
+        traza["reintento_redaccion"] = {"usado": True, "motivo": motivo, "resultado": "pendiente"}
+        observaciones.append({"salida_final_rechazada": motivo,
+                              "indicacion": "Redacta de nuevo solo la salida final (responder, proponer_informe, aclarar o rechazar). No hay más operaciones disponibles. No agregues citas que no correspondan."})
+        try:
+            decision = await self._decidir(texto, memoria, permitidos, observaciones, {"decisiones": 0, "operaciones": 0, "reintento_redaccion": 1}, traza)
+            if decision.accion not in TERMINALES:
+                raise ValueError("El reintento de redacción debe ser una salida final.")
+            citas = validar_decision(decision, texto, permitidos, catalogo, True)
+        except (ValueError, DecisionInvalida) as error:
+            traza["reintento_redaccion"]["resultado"] = "rechazado"
+            self._rechazo(traza, paso, "redaccion_reintento", str(error))
+            raise Detencion("ERROR_VALIDACION") from None
+        traza["reintento_redaccion"]["resultado"] = "aceptado"
+        traza["eventos"].append({"paso": paso, "etapa": "REDACCION_REINTENTADA_VALIDADA", "accion": decision.accion})
+        return decision, citas
+
     async def _recorrer(self, texto: str, memoria: list[dict], permitidos: set[str], fuente: Any, traza: dict) -> tuple[Decision, list[str], dict]:
         catalogo: dict[str, dict] = {}
         observaciones: list[dict] = []
         visitadas: set[str] = set()
         operaciones = 0
-        reintento_usado = False
         for paso in range(1, MAX_DECISIONES + 1):
+            traza["decisiones"] = paso
             restantes = {"decisiones": MAX_DECISIONES - paso + 1, "operaciones": MAX_OPERACIONES - operaciones}
+            clasificado = any(e["operacion"] == "clasificar_documento" for e in catalogo.values())
             try:
                 decision = await self._decidir(texto, memoria, permitidos, observaciones, restantes, traza)
-                citas = validar_decision(decision, texto, permitidos, catalogo, any(e["operacion"] == "clasificar_documento" for e in catalogo.values()))
-            except (ValueError, ValidationError) as error:
-                motivo = str(error).splitlines()[0][:300]
-                traza["eventos"].append({"paso": paso, "etapa": "DECISION_RECHAZADA", "motivo": motivo})
-                if reintento_usado:
-                    raise Detencion("ERROR_VALIDACION") from None
-                reintento_usado = True
-                observaciones.append({"decision_rechazada": motivo, "indicacion": "Corrige la decisión sin agregar citas que no correspondan."})
+            except DecisionInvalida as error:
+                if error.accion in TERMINALES:
+                    motivo = self._rechazo(traza, paso, "redaccion", str(error))
+                    decision, citas = await self._reintentar_redaccion(texto, memoria, permitidos, observaciones, catalogo, motivo, paso, traza)
+                    return decision, citas, catalogo
+                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error)),
+                                      "indicacion": "Corrige la decisión respetando el esquema."})
+                continue
+            if decision.accion in TERMINALES:
+                try:
+                    citas = validar_decision(decision, texto, permitidos, catalogo, clasificado)
+                except ValueError as error:
+                    motivo = self._rechazo(traza, paso, "redaccion", str(error))
+                    decision, citas = await self._reintentar_redaccion(texto, memoria, permitidos, observaciones, catalogo, motivo, paso, traza)
+                    return decision, citas, catalogo
+                traza["eventos"].append({"paso": paso, "etapa": "DECISION_VALIDADA", "accion": decision.accion})
+                return decision, citas, catalogo
+            try:
+                validar_decision(decision, texto, permitidos, catalogo, clasificado)
+            except ValueError as error:
+                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error)),
+                                      "indicacion": "Corrige la decisión; no repitas una operación no permitida."})
                 continue
             traza["eventos"].append({"paso": paso, "etapa": "DECISION_VALIDADA", "accion": decision.accion})
-            if decision.accion in TERMINALES:
-                return decision, citas, catalogo
             argumentos = ({"consulta": decision.consulta.strip()} if decision.accion == "buscar_documentos"
                           else {"codigo_solicitud": decision.codigo_solicitud} if decision.accion == "consultar_estado_solicitud" else {})
             firma = json.dumps([decision.accion, argumentos], sort_keys=True, ensure_ascii=False)
@@ -469,6 +522,7 @@ class Sistema:
                 raise Detencion("LIMITE_OPERACIONES")
             visitadas.add(firma)
             operaciones += 1
+            traza["operaciones"] = operaciones
             if decision.accion == "buscar_documentos":
                 resultado = await asyncio.to_thread(self.recuperador.recuperar, argumentos["consulta"], fuente)
                 traza["recuperacion"].append({"modo": resultado.modo, "consulta": argumentos["consulta"], "tiempos_ms": resultado.tiempos_ms,
@@ -494,8 +548,10 @@ class Sistema:
     async def atender(self, texto: str, conversacion_id: str, token: str) -> ResultadoAtencion:
         inicio = time.perf_counter()
         traza = {"modelo": self.configuracion.groq_modelo, "recuperacion_configurada": self.configuracion.recuperacion,
-                 "limites": {"decisiones": MAX_DECISIONES, "operaciones": MAX_OPERACIONES, "turnos_contexto": TURNOS_CONTEXTO, "segundos": self.configuracion.max_segundos},
-                 "eventos": [], "uso_tokens": [], "recuperacion": []}
+                 "limites": {"decisiones": MAX_DECISIONES, "operaciones": MAX_OPERACIONES, "reintentos_redaccion": REINTENTOS_REDACCION,
+                            "turnos_contexto": TURNOS_CONTEXTO, "segundos": self.configuracion.max_segundos},
+                 "eventos": [], "uso_tokens": [], "recuperacion": [], "decisiones": 0, "operaciones": 0, "llamadas_modelo": 0,
+                 "reintento_redaccion": {"usado": False, "motivo": "", "resultado": "no_aplica"}}
         if not isinstance(texto, str) or not 1 <= len(texto.strip()) <= MAX_ENTRADA:
             return ResultadoAtencion("ERROR_ENTRADA", f"Escribe entre 1 y {MAX_ENTRADA} caracteres.", str(conversacion_id), traza=traza)
         texto = texto.strip()
