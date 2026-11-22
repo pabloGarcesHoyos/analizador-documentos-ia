@@ -28,6 +28,8 @@ ESPERANDO_CUPO = "Esperando cupo del proveedor del modelo…"
 SESION_NO_VALIDA = "Sesión no válida."
 RUTAS_BLOQUEADAS = re.compile(r"^/gradio_api/(run|api|call|info|openapi\.json|mcp|upload|upload_progress|deep_link|run-history|runs|monitoring)(/|$)"
                               r"|^/(monitoring|runs)(/|$)")
+ESTILOS = ('#chat-analizador button[aria-label="Clear"], #chat-analizador button[aria-label="Borrar"], '
+           '#chat-analizador button[aria-label="Limpiar chat"] {display: none !important;}')
 CABECERA = """<script>
 (() => {
   const etiquetas = {"chatbot conversation": "Conversación con el analizador", "Clear": "Borrar", "Copy": "Copiar", "Copy message": "Copiar mensaje",
@@ -526,7 +528,7 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
                 c["salir"] = gr.Button("Cerrar sesión", variant="secondary")
             with gr.Column(scale=3):
                 c["indicador"] = gr.Markdown("")
-                c["chat"] = gr.Chatbot(label="Conversación", height=520, sanitize_html=True, buttons=[], feedback_options=None)
+                c["chat"] = gr.Chatbot(label="Conversación", height=520, sanitize_html=True, buttons=[], feedback_options=None, elem_id="chat-analizador")
                 with gr.Row():
                     c["entrada"] = gr.Textbox(label="Pregunta", placeholder="Escribe tu pregunta o pega el texto de un documento", lines=2, scale=4)
                     c["enviar"] = gr.Button("Enviar", variant="primary", scale=1)
@@ -567,7 +569,7 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
 
 
 def opciones_lanzamiento(servidor: str, puerto: int) -> dict:
-    return {"server_name": servidor, "server_port": puerto, "share": False, "show_error": False, "footer_links": [], "head": CABECERA,
+    return {"server_name": servidor, "server_port": puerto, "share": False, "show_error": False, "footer_links": [], "head": CABECERA, "css": ESTILOS,
             "app_kwargs": {"middleware": [Middleware(BloqueoApi)]}}
 
 

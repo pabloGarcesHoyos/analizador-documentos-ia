@@ -60,6 +60,8 @@ def test_la_pagina_sigue_disponible_con_etiquetas_propias(servidor):
     _, url = servidor
     pagina = httpx.get(url + "/", timeout=20)
     assert pagina.status_code == 200 and "Conversación con el analizador" in pagina.text
+    configuracion = httpx.get(url + "/config", timeout=20).text
+    assert "chat-analizador" in configuracion and "Limpiar chat" in configuracion and "display: none" in configuracion
 
 
 def test_todos_los_eventos_privados_sin_progreso_de_gradio(servidor):
