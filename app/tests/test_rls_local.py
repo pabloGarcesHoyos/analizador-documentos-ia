@@ -28,7 +28,7 @@ def conexion():
     if not URL:
         pytest.skip("PRUEBAS_PG_URL no está definida")
     with psycopg.connect(URL, autocommit=True) as conexion:
-        for nombre in ("01_corpus.sql", "02_historial.sql", "03_informes.sql"):
+        for nombre in ("01_corpus.sql", "02_historial.sql", "03_informes.sql", "05_presentacion.sql", "05_presentacion.sql"):
             conexion.execute((CARPETA_SQL / nombre).read_text(encoding="utf-8"))
         yield conexion
 
@@ -156,3 +156,17 @@ def test_acciones_de_informe_unicas_y_resultado_una_vez(conexion, usuarios):
     otra = nueva_conversacion(conexion, usuarios["lector"])
     sin_accion = nuevo_mensaje(conexion, usuarios["lector"], propia)
     assert falla(conexion, usuarios["lector"], insertar, (otra, sin_accion, HUELLA)) == "23503"
+
+
+def test_presentacion_del_mensaje_se_guarda_y_sigue_siendo_privada(conexion, usuarios):
+    propia = nueva_conversacion(conexion, usuarios["lector"])
+    with como(conexion, usuarios["lector"]) as c:
+        c.execute("insert into public.mensajes (conversacion_id, rol, contenido, estado, limitacion, detalle_error) "
+                  "values (%s, 'asistente', 'texto', 'PARCIAL', 'Falta una parte.', '')", (propia,))
+        assert c.execute("select limitacion, detalle_error from public.mensajes where conversacion_id = %s", (propia,)).fetchone() == ("Falta una parte.", "")
+    with como(conexion, usuarios["ajeno"]) as c:
+        assert c.execute("select count(*) from public.mensajes where conversacion_id = %s", (propia,)).fetchone()[0] == 0
+    assert falla(conexion, usuarios["lector"], "insert into public.mensajes (conversacion_id, rol, contenido, limitacion) values (%s, 'usuario', 'texto', 'x')",
+                 (propia,)) == "23514"
+    assert falla(conexion, usuarios["lector"], "insert into public.mensajes (conversacion_id, rol, contenido, limitacion) values (%s, 'asistente', 'texto', %s)",
+                 (propia, "x" * 2001)) == "23514"

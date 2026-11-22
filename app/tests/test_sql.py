@@ -14,7 +14,7 @@ def sin_literales(texto):
 
 
 def test_scripts_numerados_en_orden():
-    assert [a.name for a in ARCHIVOS] == ["01_corpus.sql", "02_historial.sql", "03_informes.sql", "04_comprobaciones.sql"]
+    assert [a.name for a in ARCHIVOS] == ["01_corpus.sql", "02_historial.sql", "03_informes.sql", "04_comprobaciones.sql", "05_presentacion.sql"]
 
 
 @pytest.mark.parametrize("archivo", ARCHIVOS, ids=lambda a: a.name)
@@ -87,3 +87,11 @@ def test_informes_unicos_y_resultado_una_sola_vez():
     assert "unique (usuario_id, mensaje_id)" in informes
     assert "grant update (resultado) on public.acciones_informe to authenticated;" in informes
     assert "using (usuario_id = (select auth.uid()) and decision = 'aprobada' and resultado is null)" in informes
+
+
+def test_presentacion_agrega_columnas_sin_tocar_permisos_ni_politicas():
+    texto = (CARPETA / "05_presentacion.sql").read_text(encoding="utf-8")
+    assert "add column if not exists limitacion text not null default ''" in texto
+    assert "add column if not exists detalle_error text not null default ''" in texto
+    assert texto.count("if not exists (select 1 from pg_constraint") == 3
+    assert "grant" not in texto and "policy" not in texto and "drop" not in texto
