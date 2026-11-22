@@ -65,6 +65,7 @@ def registrar(caso, texto, esperado, criterio, resultado, cumple):
                 "decisiones": traza.get("decisiones"), "operaciones": traza.get("operaciones"), "llamadas_modelo": traza.get("llamadas_modelo"),
                 "reintento_redaccion": traza.get("reintento_redaccion"), "eventos": traza.get("eventos"), "error_tecnico": traza.get("error_tecnico"),
                 "salidas_rechazadas": traza.get("salidas_rechazadas"), "prompt_agente": traza.get("prompt_agente"),
+                "frases_generadas": traza.get("frases_generadas"), "error_proveedor": traza.get("error_proveedor"),
                 "herramientas": [{"etiqueta": h["etiqueta"], "operacion": h["operacion"], "argumentos": h["argumentos"], "citada": h["citada"],
                                   "decision": h["resultado"].get("decision"), "encontrado": h["resultado"].get("encontrado"),
                                   "estado": (h["resultado"].get("registro") or {}).get("estado"), "fuente": h["resultado"].get("fuente")}
