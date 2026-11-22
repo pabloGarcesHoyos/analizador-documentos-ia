@@ -26,7 +26,7 @@ SERVIDOR_MCP = CARPETA_APP / "servidor_mcp.py"
 SCRIPT_MCP_ARCHIVOS = CARPETA_APP / "mcp_archivos/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"
 CARPETA_INFORMES = CARPETA_APP / "informes"
 MODELO_GENERATIVO = "openai/gpt-oss-20b"
-FLUJO_VERSION, PROMPT_RAG_VERSION, PROMPT_ENRUTADOR_VERSION = "flujo_v2", "rag_v4", "enrutador_v2"
+FLUJO_VERSION, PROMPT_RAG_VERSION, PROMPT_ENRUTADOR_VERSION = "flujo_v3", "rag_v4", "enrutador_v2"
 MAX_CONSULTAS, REINTENTOS_REDACCION, REINTENTOS_JSON, TURNOS_CONTEXTO = 2, 1, 1, 4
 MAX_SEGUNDOS = 90
 MAX_ENTRADA, MAX_CONSULTA, MAX_RESPUESTA, MAX_LIMITACION = 1200, 500, 2500, 600
@@ -52,6 +52,12 @@ RE_POLITICA = re.compile(r"\b(requisit\w*|necesit\w*|debe\w*|que pasa si|se acep
 RE_DOMINIO = re.compile(r"\b(factur\w*|contrat\w*|cedula\w*|pasaporte\w*|identificac\w*|identidad|document\w*|nit|impuest\w*|firma\w*|vigencia|otrosi|moneda|dolar\w*|tachadur\w*|enmendadur\w*|radic\w*|contabiliz\w*|registr\w*|tramite\w*|expedic\w*|imagen|borros\w*|vencid\w*|renov\w*|borrador\w*|juridic\w*|analizador|solicitud\w*|codigo\w*|cancel\w*|aprob\w*|tasa)\b")
 RE_DOCUMENTO = re.compile(r"(factura de venta|factura no\b|fecha:|emisor:|cliente:|total a pagar|valor( mensual)?:|vigencia:|objeto:|firmad[oa]|nombre:|numero de documento|cedula de ciudadania|cedula de extranjeria|contrato de|acuerdo|pasaporte no)")
 
+REGLAS_REINTENTO = ("Devuelve de nuevo el JSON completo cumpliendo todas estas reglas de citas: "
+                    "1) en 'respondida' y 'parcial', cada frase de 'respuesta' lleva al menos una etiqueta [F#] del pasaje que la respalda, incluida la primera frase; "
+                    "2) las etiquetas se escriben entre corchetes dentro del texto de 'respuesta', una por corchete, por ejemplo [F1] o [F1] [F3]; "
+                    "3) 'citas' contiene exactamente las etiquetas escritas en 'respuesta', sin repetir; "
+                    "4) usa solo etiquetas [F#] recibidas en la evidencia y nunca [T#]; "
+                    "5) si el estado no es 'respondida', explica en 'limitacion' qué falta o qué dato se necesita.")
 ESTADO_RAG = {"respondida": "RESPONDIDA", "parcial": "PARCIAL", "aclaracion": "ACLARACION", "evidencia_insuficiente": "SIN_EVIDENCIA"}
 MENSAJES = {
     "ERROR_TECNICO": "No se pudo completar la solicitud por un error técnico. Esto no significa que la información no exista; intenta de nuevo en unos minutos.",
@@ -739,9 +745,7 @@ class Sistema:
                     raise Detencion("ERROR_VALIDACION") from None
                 traza["reintento_redaccion"] = {"usado": True, "motivo": motivo, "resultado": "pendiente"}
                 mensajes = mensajes[:2] + [{"role": "assistant", "content": contenido or ""}, {"role": "user", "content":
-                    "Tu respuesta no cumple el contrato: " + motivo + ". Devuelve de nuevo el JSON completo. Escribe cada etiqueta entre corchetes dentro de "
-                    "'respuesta' (por ejemplo [F1]), repite exactamente esas etiquetas en 'citas' y, si el estado no es 'respondida', explica en 'limitacion' "
-                    "qué falta o qué dato se necesita."}]
+                    "Tu respuesta no cumple el contrato: " + motivo + ". " + REGLAS_REINTENTO}]
         raise Detencion("ERROR_VALIDACION")
 
     async def _libre(self, texto: str, memoria: list[dict], traza: dict, limite: float | None) -> DecisionEnrutador:

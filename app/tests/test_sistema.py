@@ -511,7 +511,7 @@ def test_conversacion_ajena_o_sesion_invalida(configuracion, almacen, conversaci
 def test_traza_suma_los_tokens_y_registra_versiones(configuracion, almacen, conversacion):
     resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[rag(citas=("F1", "F2")), rag()])), "¿Qué datos debe traer una factura?", conversacion)
     assert resultado.traza["tokens"] == {"entrada": 200, "salida": 40, "razonamiento": 10, "total": 240}
-    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v2", "rag_v4", "enrutador_v2")
+    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v3", "rag_v4", "enrutador_v2")
 
 
 @pytest.mark.parametrize("resultado_mcp, esperado", [
@@ -758,3 +758,14 @@ def test_escritor_real_de_filesystem_mcp(tmp_path):
     assert ruta.read_text(encoding="utf-8") == "# Informe\n\nContenido verificado.\n"
     with pytest.raises(si.ErrorTecnico):
         asyncio.run(escritor.escribir(tmp_path.parent / "fuera.md", "x"))
+
+
+@pytest.mark.parametrize("salida", [rag(citas=("F1", "F2")), rag(respuesta="Debe incluir el NIT. Y el desglose [F1].")])
+def test_reintento_repite_siempre_todas_las_reglas_de_citas(configuracion, almacen, conversacion, salida):
+    llm = LLMGuionado(rag=[salida, rag()])
+    atender(armar(configuracion, almacen, llm), "¿Qué datos debe traer una factura?", conversacion)
+    contenido = llm.de("respuesta_rag")[1]["mensajes"][3]["content"]
+    assert contenido.endswith(si.REGLAS_REINTENTO) and contenido.startswith("Tu respuesta no cumple el contrato: ")
+    for regla in ("cada frase de 'respuesta' lleva al menos una etiqueta [F#]", "dentro del texto de 'respuesta'",
+                  "'citas' contiene exactamente las etiquetas escritas", "nunca [T#]", "explica en 'limitacion'"):
+        assert regla in contenido
