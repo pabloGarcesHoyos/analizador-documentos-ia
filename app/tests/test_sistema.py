@@ -21,7 +21,7 @@ REGISTRO = {
     "SOL-1001": {"categoria": "contratacion", "estado": "pendiente_firma", "detalle": "Contrato pendiente."},
     "SOL-1002": {"categoria": "contratacion", "estado": "requiere_revision_humana", "detalle": "Intento de modificación."},
 }
-FRASE_DOC_1001 = "El documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1]."
+FRASE_DOC_1001 = "El documento DOC-1001 figura en el registro documental con estado verificado_y_contabilizado [T1]."
 
 
 NIT = ("La factura debe incluir el NIT del emisor y el desglose de impuestos.", ("F1",))
@@ -194,7 +194,7 @@ def test_ruta_estado_con_dos_codigos_y_tope_de_consultas(configuracion, almacen,
 
 def test_ruta_estado_codigo_inexistente_sin_inventar(configuracion, almacen, conversacion):
     resultado = atender(armar(configuracion, almacen), "Estado de SOL-0042", conversacion)
-    assert resultado.respuesta == "La solicitud SOL-0042 no existe en el registro sistema_seguimiento_expedientes [T1]."
+    assert resultado.respuesta == "La solicitud SOL-0042 no existe en el registro de seguimiento de expedientes [T1]."
     assert resultado.herramientas[0]["resultado"]["encontrado"] is False
 
 
@@ -547,9 +547,9 @@ def test_traza_suma_los_tokens_y_registra_versiones(configuracion, almacen, conv
      FRASE_DOC_1001),
     ({"codigo_solicitud": "SOL-1001", "encontrado": True, "registro": {"categoria": "contratacion", "estado": "pendiente_firma", "detalle": "Contrato pendiente."},
       "fuente": "sistema_seguimiento_expedientes"},
-     "La solicitud SOL-1001 figura en el registro sistema_seguimiento_expedientes con estado pendiente_firma; detalle: Contrato pendiente [T1]."),
+     "La solicitud SOL-1001 figura en el registro de seguimiento de expedientes con estado pendiente_firma; detalle: Contrato pendiente [T1]."),
     ({"codigo_solicitud": "DOC-9998", "encontrado": False, "registro": None, "fuente": "registro_sistema_documental_v1"},
-     "El documento DOC-9998 no existe en el registro registro_sistema_documental_v1 [T1]."),
+     "El documento DOC-9998 no existe en el registro documental [T1]."),
 ])
 def test_frase_de_registro_se_arma_desde_el_dato(resultado_mcp, esperado):
     assert si.frase_de_registro("T1", resultado_mcp) == esperado
@@ -884,3 +884,10 @@ def test_ruta_mixta_acepta_el_codigo_como_ejemplo_de_formato_del_corpus(configur
 ])
 def test_afirmar_estado_frente_a_mencionar_el_codigo(texto, afirma):
     assert si.afirma_estado(texto, "DOC-1001") is afirma
+
+
+def test_linea_de_turno_sin_datos_del_usuario():
+    linea = si.linea_de_turno("estado", 812.4, {"rss_mb": 301.25, "pico_mb": 356.0, "hijos_mb": 0.0, "pico_hijos_mb": None})
+    assert linea == "turno ruta=estado ms=812 rss_mb=301.2 pico_mb=356.0 hijos_mb=0.0 pico_hijos_mb=nd"
+    assert si.linea_de_turno("a@b.co DOC-1001", 1, {}).startswith("turno ruta=sin_ruta ms=1")
+    assert set(si.memoria_mb()) == {"rss_mb", "pico_mb", "hijos_mb", "pico_hijos_mb"}

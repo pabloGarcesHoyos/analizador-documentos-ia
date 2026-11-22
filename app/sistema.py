@@ -5,6 +5,7 @@ import json
 import math
 import os
 import re
+import resource
 import shutil
 import sys
 import threading
@@ -47,6 +48,8 @@ PATRONES_SECRETOS = [(re.compile(r"eyJ[A-Za-z0-9_.-]+"), "<token>"), (re.compile
                      (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"), "<correo>")]
 MAX_SALIDA_RECHAZADA = 600
 FUENTE_CLASIFICADOR = "clasificador_corte1_analizador_v3"
+NOMBRES_REGISTRO = {"registro_sistema_documental_v1": "el registro documental",
+                    "sistema_seguimiento_expedientes": "el registro de seguimiento de expedientes"}
 
 RE_PREGUNTA_INICIO = re.compile(r"^(que|como|cual|cuales|cuando|donde|por que|puedo|se puede|sirve|aceptan|tengo|necesito|si|quien|quiero saber)\b")
 RE_SEGUIMIENTO = re.compile(r"\b(como va|como van|en que va|en que estado|estado de|que paso con|ya paso|ya pasaron|ya revisaron|ya la revisaron|seguimiento)\b")
@@ -507,14 +510,52 @@ def filtrar_secretos(texto: str) -> str:
     return texto
 
 
+def nombre_registro(fuente: str) -> str:
+    return NOMBRES_REGISTRO.get(fuente, f"el registro {fuente}")
+
+
 def frase_de_registro(etiqueta: str, resultado: dict) -> str:
     codigo = resultado["codigo_solicitud"]
     sujeto = "El documento" if codigo.startswith("DOC") else "La solicitud"
+    registro_legible = nombre_registro(resultado["fuente"])
     if not resultado.get("encontrado") or not resultado.get("registro"):
-        return f"{sujeto} {codigo} no existe en el registro {resultado['fuente']} [{etiqueta}]."
+        return f"{sujeto} {codigo} no existe en {registro_legible} [{etiqueta}]."
     registro = resultado["registro"]
     detalle = f"; detalle: {registro['detalle'].rstrip('.')}" if registro.get("detalle") else ""
-    return f"{sujeto} {codigo} figura en el registro {resultado['fuente']} con estado {registro['estado']}{detalle} [{etiqueta}]."
+    return f"{sujeto} {codigo} figura en {registro_legible} con estado {registro['estado']}{detalle} [{etiqueta}]."
+
+
+def _rss_mb(proceso: str = "self") -> float | None:
+    try:
+        return int(Path(f"/proc/{proceso}/statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE") / 1048576
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _hijos() -> list[str]:
+    hijos: list[str] = []
+    for tarea in Path("/proc/self/task").glob("*/children"):
+        try:
+            hijos += tarea.read_text().split()
+        except OSError:
+            continue
+    return hijos
+
+
+def _pico_mb(quien: int) -> float:
+    pico = resource.getrusage(quien).ru_maxrss
+    return pico / 1024 if sys.platform.startswith("linux") else pico / 1048576
+
+
+def memoria_mb() -> dict[str, float | None]:
+    return {"rss_mb": _rss_mb(), "pico_mb": _pico_mb(resource.RUSAGE_SELF),
+            "hijos_mb": sum(_rss_mb(p) or 0.0 for p in _hijos()), "pico_hijos_mb": _pico_mb(resource.RUSAGE_CHILDREN)}
+
+
+def linea_de_turno(ruta: str | None, milisegundos: float, memoria: dict[str, float | None]) -> str:
+    valores = " ".join(f"{clave}={'nd' if valor is None else f'{valor:.1f}'}" for clave, valor in memoria.items())
+    ruta = ruta if ruta and re.fullmatch(r"[a-z_]{1,20}", ruta) else "sin_ruta"
+    return f"turno ruta={ruta} ms={milisegundos:.0f} {valores}"
 
 
 def _normalizar_valor(valor: str) -> str:
@@ -861,10 +902,15 @@ class Sistema:
 
     async def atender(self, texto: str, conversacion_id: str, token: str, al_esperar: Any = None) -> ResultadoAtencion:
         marca = AVISO_ESPERA.set(al_esperar)
+        inicio = time.perf_counter()
+        ruta = None
         try:
-            return await self._atender(texto, conversacion_id, token)
+            resultado = await self._atender(texto, conversacion_id, token)
+            ruta = resultado.traza.get("ruta")
+            return resultado
         finally:
             AVISO_ESPERA.reset(marca)
+            print(linea_de_turno(ruta, (time.perf_counter() - inicio) * 1000, memoria_mb()), flush=True)
 
     async def _atender(self, texto: str, conversacion_id: str, token: str) -> ResultadoAtencion:
         inicio = time.perf_counter()
