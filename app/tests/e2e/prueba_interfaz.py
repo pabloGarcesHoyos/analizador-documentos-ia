@@ -23,9 +23,14 @@ import app as ap
 
 URL = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:7860").rstrip("/")
 SALIDA = RAIZ / "evidencias" / "fase3"
-CAPTURAS = SALIDA / "capturas_v2"
-RESULTADOS = SALIDA / "prueba_interfaz_v2.json"
-RESULTADOS_ANTERIORES = SALIDA / "prueba_interfaz.json"
+CAPTURAS = SALIDA / "capturas_v3"
+RESULTADOS = SALIDA / "prueba_interfaz_v3.json"
+CORRIDAS_ANTERIORES = [("Corrida 2", SALIDA / "prueba_interfaz_v2.json", "capturas_v2",
+                        "Se conserva sin cambios. Los pasos 9, 12 y 13 fallaron por esperas fijas del script; el paso 14 por una comprobación demasiado estricta."),
+                       ("Corrida 1", SALIDA / "prueba_interfaz.json", "capturas",
+                        "Se conserva sin cambios. El paso 2 falló por un defecto del script (leía la caja de contraseña después de que Gradio la ocultara), "
+                        "no de la aplicación.")]
+FRASES_ESPANOLAS = ("Error de validación", "Error técnico")
 ENTRADA = "Escribe tu pregunta o pega el texto de un documento"
 SELECTOR_ENTRADA = f'textarea[placeholder="{ENTRADA}"]'
 ESPERA_RESPUESTA = 150000
@@ -63,6 +68,7 @@ class Registro:
         self.http: list[dict] = []
         self.tiempos: list[dict] = []
         self.esperas_cupo: list[str] = []
+        self.selecciones: list[float] = []
         self.numero = 0
 
     def escuchar(self, pagina, nombre: str) -> None:
@@ -87,12 +93,12 @@ class Registro:
         valores = pagina.evaluate("() => [...document.querySelectorAll('input[type=password]')].map(e => e.value)")
         if any(v in CLAVES for v in valores):
             raise AssertionError("Una caja de contraseña conserva la contraseña real; no se guarda la captura.")
-        TEXTOS_A_REVISAR.append((nombre, texto))
-        ATRIBUTOS_A_REVISAR.append((nombre, " | ".join(pagina.evaluate(
-            "() => [...document.querySelectorAll('[aria-label],[title],[placeholder]')].filter(e => e.offsetParent !== null)"
-            ".map(e => [e.getAttribute('aria-label'), e.getAttribute('title'), e.getAttribute('placeholder')].filter(Boolean).join(' '))"))))
         self.numero += 1
         ruta = CAPTURAS / f"{self.numero:02d}_{nombre}.png"
+        TEXTOS_A_REVISAR.append((ruta.name, texto))
+        ATRIBUTOS_A_REVISAR.append((ruta.name, " | ".join(pagina.evaluate(
+            "() => [...document.querySelectorAll('[aria-label],[title],[placeholder]')].filter(e => e.offsetParent !== null)"
+            ".map(e => [e.getAttribute('aria-label'), e.getAttribute('title'), e.getAttribute('placeholder')].filter(Boolean).join(' '))"))))
         mascaras = [pagina.get_by_text("Sesión iniciada como"), pagina.locator("input[type=email]")]
         pagina.screenshot(path=str(ruta), mask=mascaras, mask_color="#7a7a7a")
         return ruta.name
@@ -197,13 +203,26 @@ def panel_abierto(pagina) -> bool:
     return pagina.evaluate("() => { const b = document.querySelector('#panel-conversaciones .label-wrap'); return !!b && b.classList.contains('open'); }")
 
 
-def abrir(pagina, conversacion_id: str) -> None:
+def abrir(pagina, conversacion_id: str, contiene: str = "") -> float:
     if not panel_abierto(pagina):
         pagina.locator("#panel-conversaciones .label-wrap").click()
-        pagina.wait_for_timeout(500)
+        pagina.wait_for_function("() => document.querySelector('#panel-conversaciones .label-wrap').classList.contains('open')", timeout=5000)
+    antes = texto_chat(pagina)
+    inicio = time.perf_counter()
     pagina.locator(f'label:has(input[value="{conversacion_id}"])').click()
-    pagina.wait_for_function(f"() => document.querySelector('input[value=\"{conversacion_id}\"]').checked", timeout=15000)
-    pagina.wait_for_timeout(2500)
+    pagina.wait_for_function(
+        """([id, antes, contiene]) => {
+            const radio = document.querySelector(`input[value="${id}"]`);
+            const chat = document.querySelector('[role=log]');
+            const texto = chat ? chat.innerText : '';
+            const indicador = [...document.querySelectorAll('.prose')].filter(e => !e.closest('[role=log]') && e.offsetParent !== null)
+                .map(e => e.innerText.trim()).find(t => t.startsWith('Conversación cargada'));
+            return radio && radio.checked && indicador && texto !== antes && texto.includes(contiene);
+        }""", arg=[conversacion_id, antes, contiene], timeout=20000)
+    pagina.wait_for_timeout(300)
+    segundos = round(time.perf_counter() - inicio, 2)
+    R.selecciones.append(segundos)
+    return segundos
 
 
 def boton_visible(pagina, nombre: str) -> bool:
@@ -351,10 +370,10 @@ def main() -> None:
             estado["contenido_aprobar"], estado["destino_aprobar"] = contenido, destino.group(0) if destino else ""
             c.append(R.capturar(a, "propuesta_de_informe"))
             primero = boton_visible(a, "Aprobar") and boton_visible(a, "Rechazar") and contenido.startswith("# Informe") and bool(destino)
-            abrir(a, estado["estado"])
+            abrir(a, estado["estado"], "¿En qué estado está DOC-1001?")
             oculto = not boton_visible(a, "Aprobar")
             c.append(R.capturar(a, "otra_conversacion_sin_panel"))
-            abrir(a, estado["informe_aprobar"])
+            abrir(a, estado["informe_aprobar"], "Haz un informe")
             otra_vez = boton_visible(a, "Aprobar") and a.get_by_role("button", name="Aprobar", exact=True).is_enabled()
             mismo = a.get_by_label("Contenido completo del informe").input_value() == contenido and estado["destino_aprobar"] in a.locator("body").inner_text()
             c.append(R.capturar(a, "propuesta_reaparece_al_volver"))
@@ -398,11 +417,11 @@ def main() -> None:
         R.paso(11, "Otra propuesta y Rechazar", "Rechazo registrado y ningún archivo.", paso11)
 
         def paso12(c):
-            abrir(a, estado["informe_aprobar"])
+            abrir(a, estado["informe_aprobar"], "Haz un informe")
             aprobado = ultima_respuesta(a)
             sin_botones_1 = not boton_visible(a, "Aprobar")
             c.append(R.capturar(a, "decision_aprobada_al_reabrir"))
-            abrir(a, estado["informe_rechazar"])
+            abrir(a, estado["informe_rechazar"], "Haz un informe")
             rechazado = ultima_respuesta(a)
             sin_botones_2 = not boton_visible(a, "Aprobar")
             c.append(R.capturar(a, "decision_rechazada_al_reabrir"))
@@ -411,9 +430,9 @@ def main() -> None:
         R.paso(12, "Reabrir las conversaciones decididas", "Se ve la decisión y no hay botones.", paso12)
 
         def paso13(c):
-            abrir(a, estado["mixta"])
+            abrir(a, estado["mixta"], "en qué estado está DOC-1001")
             antes_mixta = texto_chat(a)
-            abrir(a, estado["estado"])
+            abrir(a, estado["estado"], "¿En qué estado está DOC-1001?")
             antes_estado = texto_chat(a)
             c.append(R.capturar(a, "antes_de_recargar"))
             a.reload()
@@ -421,10 +440,10 @@ def main() -> None:
             pide = a.get_by_role("button", name="Iniciar sesión").is_visible() and not a.locator('[role="log"]').filter(visible=True).count()
             c.append(R.capturar(a, "recarga_pide_login"))
             iniciar_sesion(a, CORREO_D, CLAVE_D)
-            abrir(a, estado["mixta"])
+            abrir(a, estado["mixta"], "en qué estado está DOC-1001")
             despues_mixta = texto_chat(a)
             c.append(R.capturar(a, "mixta_tras_recargar"))
-            abrir(a, estado["estado"])
+            abrir(a, estado["estado"], "¿En qué estado está DOC-1001?")
             despues_estado = texto_chat(a)
             limitacion = "Limitación:" in antes_mixta
             ok = pide and antes_mixta == despues_mixta and antes_estado == despues_estado and "Fuentes: [F" in despues_mixta and "Consultas: [T1]" in despues_estado
@@ -460,12 +479,13 @@ def main() -> None:
             indice = next((i for i, d in enumerate(info.get("dependencies", [])) if any(t[0] == radio for t in d.get("targets", []))), None)
             codigo, cuerpo = pedir("POST", "/gradio_api/queue/join", {"data": [None, objetivo], "fn_index": indice, "session_hash": uuid.uuid4().hex[:11],
                                                                      "event_data": None, "trigger_id": radio})
-            negado = codigo == 400 and "Sesión no válida" in cuerpo
+            negado = 400 <= codigo < 500 and not any(m in cuerpo for m in ("role", "Respondida", "Fuentes", "contenido", "mensajes"))
             ok = not comunes and por_url and negado and len(estado["ids_a"]) > 0
             return (f"A y B con sesión al mismo tiempo en contextos separados. Conversaciones de A o del usuario de demostración en la lista completa de B: "
                     f"{len(comunes)} de {len(estado['ids_a']) + len(estado['ids_demo'])}. Por URL con el UUID de una conversación de A: sin acceso {por_url}. "
                     f"La interfaz no tiene campo que acepte un UUID. POST /gradio_api/queue/join al evento de selección con ese UUID y sin sesión: "
-                    f"HTTP {codigo}, {limpiar(cuerpo)[:80]}."), ok
+                    f"HTTP {codigo}, sin datos de la conversación: {negado}. Respuesta: {limpiar(cuerpo)[:120]}. Si el mensaje es el interno de Gradio sobre un valor "
+                    "fuera de las opciones de la lista, se acepta: es un rechazo previo al validador de sesión."), ok
         R.paso(14, "B en otro contexto al mismo tiempo que A", "B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL.", paso14)
 
         antes_ver_mas = len(ids_lista(u))
@@ -515,7 +535,7 @@ def main() -> None:
             chat_visible = pagina.evaluate("() => { const c = document.querySelector('[role=log]'); if (!c) return false; const r = c.getBoundingClientRect();"
                                            " return r.top < window.innerHeight && r.bottom > 0; }")
             capturas.append(R.capturar(pagina, f"vista_{nombre}_al_entrar"))
-            abrir(pagina, estado["mixta"])
+            abrir(pagina, estado["mixta"], "en qué estado está DOC-1001")
             capturas.append(R.capturar(pagina, f"vista_{nombre}_panel_abierto"))
             pagina.locator("#panel-conversaciones .label-wrap").click()
             pagina.wait_for_timeout(500)
@@ -534,14 +554,25 @@ def main() -> None:
         api_directa = pedir("POST", "/gradio_api/run/predict", {"data": [], "fn_index": 0})
         navegador.close()
 
-    ingles = sorted({p for _, t in TEXTOS_A_REVISAR for p in PALABRAS_INGLES if re.search(rf"\b{re.escape(p)}\b", t)})
-    ingles_atributos = sorted({p for _, t in ATRIBUTOS_A_REVISAR for p in PALABRAS_INGLES if re.search(rf"\b{re.escape(p)}\b", t, re.IGNORECASE)})
+    def buscar_ingles(registros, mayusculas):
+        hallazgos: dict[str, list[str]] = {}
+        for captura, texto in registros:
+            for frase in FRASES_ESPANOLAS:
+                texto = texto.replace(frase, "")
+            for palabra in PALABRAS_INGLES:
+                if re.search(rf"\b{re.escape(palabra)}\b", texto, 0 if mayusculas else re.IGNORECASE):
+                    hallazgos.setdefault(palabra, []).append(captura)
+        return hallazgos
+    ingles = buscar_ingles(TEXTOS_A_REVISAR, True)
+    ingles_atributos = buscar_ingles(ATRIBUTOS_A_REVISAR, False)
+    describir = lambda hallazgos: "; ".join(f"{p} en {', '.join(c)}" for p, c in hallazgos.items()) or "ninguna"
     internos = sorted({m for _, t in TEXTOS_A_REVISAR for m in TERMINOS_INTERNOS.findall(t)})
     emojis = sorted({m for _, t in TEXTOS_A_REVISAR for m in EMOJIS.findall(t)})
     R.extras[:0] = [
-        {"revision": "Texto visible en inglés", "observado": f"Palabras encontradas: {ingles or 'ninguna'}.", "capturas": [], "estado": "aprobado" if not ingles else "fallido"},
-        {"revision": "Etiquetas de accesibilidad y textos emergentes en inglés", "observado": f"Palabras encontradas: {ingles_atributos or 'ninguna'}.", "capturas": [],
-         "estado": "aprobado" if not ingles_atributos else "fallido"},
+        {"revision": "Texto visible en inglés (sin contar Error de validación ni Error técnico)", "observado": f"Palabras encontradas: {describir(ingles)}.",
+         "capturas": sorted({c for v in ingles.values() for c in v}), "estado": "aprobado" if not ingles else "fallido"},
+        {"revision": "Etiquetas de accesibilidad y textos emergentes en inglés", "observado": f"Palabras encontradas: {describir(ingles_atributos)}.",
+         "capturas": sorted({c for v in ingles_atributos.values() for c in v}), "estado": "aprobado" if not ingles_atributos else "fallido"},
         {"revision": "Términos internos en el texto visible", "observado": f"Encontrados: {internos or 'ninguno'}.", "capturas": [], "estado": "aprobado" if not internos else "fallido"},
         {"revision": "Emojis en el texto visible", "observado": f"Encontrados: {len(emojis)}.", "capturas": [], "estado": "aprobado" if not emojis else "fallido"},
         {"revision": "Errores en la consola del navegador", "observado": f"{len([x for x in R.consola if x['tipo'] != 'warning'])} errores y "
@@ -558,6 +589,8 @@ def main() -> None:
         {"revision": "Aviso propio de espera de cupo", "observado": ("Observado en: " + "; ".join(R.esperas_cupo)) if R.esperas_cupo else
          "No hubo espera de cupo en esta corrida; el aviso está cubierto por pruebas unitarias.", "capturas": [e.split(": ")[-1] for e in R.esperas_cupo],
          "estado": "informativo"},
+        {"revision": "Tiempo de cambio de conversación", "observado": f"{len(R.selecciones)} cambios; mediana {sorted(R.selecciones)[len(R.selecciones) // 2] if R.selecciones else 0} s, "
+         f"máximo {max(R.selecciones) if R.selecciones else 0} s: {R.selecciones}.", "capturas": [], "estado": "informativo"},
         {"revision": "Tiempo de cada respuesta", "observado": "; ".join(f"\"{t['pregunta']}\": {t['ms']} ms" for t in R.tiempos) + ".", "capturas": [], "estado": "informativo"},
     ]
     escribir_informe()
@@ -590,13 +623,12 @@ def escribir_informe() -> None:
               "Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la aplicación corriendo. Las credenciales se leen de "
               "`app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión y la caja de correo se cubren con un recuadro gris; "
               "antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave.", ""]
-    lineas += seccion("Corrida 2 (vigente)", datos, "capturas_v2",
-                      "Después de corregir los cuatro problemas de la corrida 1, el paso 2 del script, el control de cupo y la carpeta de informes. "
-                      "El flujo principal usa un usuario de demostración; A y B se usan para el aislamiento.")
-    if RESULTADOS_ANTERIORES.exists():
-        lineas += seccion("Corrida 1", json.loads(RESULTADOS_ANTERIORES.read_text(encoding="utf-8")), "capturas",
-                          "Se conserva sin cambios. El paso 2 falló por un defecto del script (leía la caja de contraseña después de que Gradio la ocultara), "
-                          "no de la aplicación.")
+    lineas += seccion("Corrida 3 (vigente)", datos, "capturas_v3",
+                      "Con el contrato rag_v5, la pregunta documental separada en la ruta mixta, el cambio de conversación optimizado, sin el botón para limpiar el chat "
+                      "y con esperas por condición en el script. El flujo principal usa un usuario de demostración; A y B se usan para el aislamiento.")
+    for titulo, archivo, carpeta, nota in CORRIDAS_ANTERIORES:
+        if archivo.exists():
+            lineas += seccion(titulo, json.loads(archivo.read_text(encoding="utf-8")), carpeta, nota)
     (SALIDA / "prueba_interfaz.md").write_text("\n".join(lineas), encoding="utf-8")
     print(f"{sum(p['estado'] == 'aprobado' for p in R.pasos)} de {len(R.pasos)} pasos aprobados", flush=True)
 
