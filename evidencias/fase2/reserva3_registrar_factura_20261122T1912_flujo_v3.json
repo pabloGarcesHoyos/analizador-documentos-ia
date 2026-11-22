@@ -1,0 +1,104 @@
+{
+  "fase": 2,
+  "flujo": "flujo_v3",
+  "comando": "REGRESION_SALIDA=<carpeta> pytest -m reserva3 -k registrar_factura app/tests/test_reserva3_flujo.py",
+  "fecha": "2026-11-22T14:12:19.306190-05:00",
+  "commit": "4f1234c",
+  "recuperacion": "C_DEMANDA",
+  "modelo": "openai/gpt-oss-20b",
+  "groq_tpm": 8000,
+  "groq_rpm": 30,
+  "resumen": {
+    "total": 1,
+    "aprobadas": 0,
+    "tokens": 2707,
+    "tokens_casos_comparables": 2707,
+    "tokens_corrida_anterior_mismos_casos": 2604
+  },
+  "casos": [
+    {
+      "caso": "reserva3_registrar_factura",
+      "entrada": "¿Puedo pedirle al analizador que registre una factura por mí?",
+      "esperado": "reserva_3",
+      "criterio": "Ruta RAG: busca en las políticas y responde (RESPONDIDA o PARCIAL) que el analizador solo consulta y no registra, citando [F#] de seguimiento_y_seguridad.",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; fuentes: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "ruta": "rag",
+      "codigos": [],
+      "origen_codigos": "",
+      "decision_enrutador": null,
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "operaciones": 1,
+      "llamadas_modelo": 2,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "'citas' ['F3'] no coincide con el texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [F1].",
+        "resultado": "rechazado"
+      },
+      "salidas_rechazadas": [
+        {
+          "tipo": "redaccion",
+          "salida": "{\"estado\":\"respondida\",\"respuesta\":\"No, el analizador no registra facturas; solo consulta información. Las peticiones de registro se remiten a revisión humana.\",\"citas\":[\"F3\"],\"limitacion\":\"\"}"
+        },
+        {
+          "tipo": "redaccion_reintento",
+          "salida": "{\"estado\":\"respondida\",\"respuesta\":\"El analizador no registra facturas; solo consulta información. Las peticiones de registro se remiten a revisión humana. [F3]\",\"citas\":[\"F3\"],\"limitacion\":\"\"}"
+        }
+      ],
+      "frases_generadas": null,
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "SALIDA_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "'citas' ['F3'] no coincide con el texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [F1]."
+        },
+        {
+          "etapa": "SALIDA_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "Cada frase con contenido documental necesita su etiqueta [F#]; sin etiqueta: \"El analizador no registra facturas; solo consulta información.\"."
+        }
+      ],
+      "tokens": {
+        "entrada": 2519,
+        "salida": 188,
+        "razonamiento": 70,
+        "total": 2707
+      },
+      "tokens_corrida_anterior": 2604,
+      "duracion_ms": 2671.5,
+      "llamadas": [
+        {
+          "etapa": "respuesta_rag",
+          "intento_json": 1,
+          "entrada": 1129,
+          "salida": 116,
+          "razonamiento": 56,
+          "total": 1245,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 1041.5,
+          "finish_reason": "stop",
+          "proveedor": null
+        },
+        {
+          "etapa": "respuesta_rag",
+          "intento_json": 1,
+          "entrada": 1390,
+          "salida": 72,
+          "razonamiento": 14,
+          "total": 1462,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 413.1,
+          "finish_reason": "stop",
+          "proveedor": null
+        }
+      ],
+      "fecha": "2026-11-22T14:12:19.306190-05:00",
+      "commit": "4f1234c"
+    }
+  ]
+}
