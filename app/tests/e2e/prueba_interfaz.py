@@ -143,7 +143,7 @@ def ultima_respuesta(pagina) -> str:
 def indicador(pagina) -> str:
     textos = pagina.evaluate("() => [...document.querySelectorAll('.prose')].filter(e => !e.closest('[role=log]') && e.offsetParent !== null)"
                              ".map(e => e.innerText.trim())")
-    propios = list(ap.ESTADOS.values()) + [ap.PROCESANDO, ap.ESPERANDO_CUPO]
+    propios = list(ap.ESTADOS.values()) + list(ap.ROTULOS_POR_RUTA.values()) + [ap.PROCESANDO, ap.ESPERANDO_CUPO]
     return next((t for t in textos if any(v in t for v in propios) or t.startswith("Conversación")), "")
 
 
@@ -303,9 +303,9 @@ def main() -> None:
             respuesta = ultima_respuesta(a)
             estado["estado"] = conversacion_actual(a)
             c.append(R.capturar(a, "estado_doc_1001"))
-            ok = "[T1]" in respuesta and "Consultas: [T1]" in respuesta and "verificado_y_contabilizado" in respuesta and ap.ESTADOS["RESPONDIDA"] in indicador(a)
+            ok = "[T1]" in respuesta and "Consultas: [T1]" in respuesta and "verificado_y_contabilizado" in respuesta and "el registro documental" in respuesta and ap.ROTULOS_POR_RUTA[("RESPONDIDA", "estado")] in indicador(a)
             return f"{ms} ms. Indicador: \"{indicador(a)}\". Respuesta: {respuesta[:400]}", ok
-        R.paso(3, "Consulta de estado de DOC-1001", "Frase con [T1], bloque de consultas e indicador Respondida.", paso3)
+        R.paso(3, "Consulta de estado de DOC-1001", "Frase con [T1] que nombra el registro documental, bloque de consultas e indicador Respondida con datos del registro.", paso3)
 
         bloqueo: dict = {}
 
