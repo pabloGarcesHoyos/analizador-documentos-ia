@@ -1,0 +1,442 @@
+{
+  "fase": 2,
+  "comando": "pytest -m reserva2",
+  "fecha": "2026-11-22T13:01:55.385774-05:00",
+  "commit": "9f205c2",
+  "recuperacion": "C_DEMANDA",
+  "modelo": "openai/gpt-oss-20b",
+  "resumen": {
+    "total": 6,
+    "aprobadas": 2
+  },
+  "casos": [
+    {
+      "caso": "reserva2_doc_1002",
+      "entrada": "Quiero saber cómo va el contrato que radicamos con el código DOC-1002.",
+      "esperado_corte1": "reserva_2",
+      "criterio": "Consulta MCP de DOC-1002 con encontrado=True y estado pendiente_firma_legal; RESPONDIDA o PARCIAL que cita el resultado [T#].",
+      "observado": "ERROR_TECNICO; herramientas: ninguna; respuesta: No se pudo completar la solicitud por un error técnico. Esto no significa que la información no exista; intenta de nuevo en unos minutos.; detalle tecnico: proveedor (El proveedor del modelo rechazó la solicitud.)",
+      "estado_final": "ERROR_TECNICO",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 1567.3,
+      "error_tecnico": "proveedor",
+      "eventos": [],
+      "tokens": {
+        "entrada": 0,
+        "salida": 0,
+        "razonamiento": 0,
+        "total": 0
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [],
+      "frases_generadas": null,
+      "error_proveedor": {
+        "tipo": "BadRequestError",
+        "codigo_http": 400
+      },
+      "llamadas": [],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    },
+    {
+      "caso": "reserva2_sol_1002",
+      "entrada": "¿Qué pasó con la solicitud SOL-1002?",
+      "esperado_corte1": "reserva_2",
+      "criterio": "Consulta MCP de SOL-1002 con encontrado=True y estado requiere_revision_humana; RESPONDIDA que cita [T#].",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 2,
+      "operaciones": 1,
+      "llamadas_modelo": 3,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "No escribas el estado de SOL-1002: el programa agrega la frase del registro con T1.",
+        "resultado": "rechazado"
+      },
+      "duracion_ms": 3884.9,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "consultar_estado_solicitud"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "consultar_estado_solicitud",
+          "argumentos": {
+            "codigo_solicitud": "SOL-1002"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "No escribas el estado de SOL-1002: el programa agrega la frase del registro con T1."
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [T1]."
+        }
+      ],
+      "tokens": {
+        "entrada": 3369,
+        "salida": 433,
+        "razonamiento": 208,
+        "total": 3802
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [
+        {
+          "paso": 2,
+          "tipo": "redaccion",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"\",\"codigo_solicitud\":\"\",\"respuesta\":\"La solicitud SOL-1002 se encuentra en estado \\\"requiere_revision_humana\\\" debido a un intento de modificación de cláusulas fuera del procedimiento. [T1]\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        },
+        {
+          "paso": 2,
+          "tipo": "redaccion_reintento",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"\",\"codigo_solicitud\":\"\",\"respuesta\":\"La solicitud SOL-1002 está en categoría contratación y requiere revisión humana. Detalle: Intento de modificación de cláusulas fuera del procedimiento.\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        }
+      ],
+      "frases_generadas": null,
+      "error_proveedor": null,
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 1030,
+          "salida": 76,
+          "razonamiento": 7,
+          "total": 1106,
+          "espera_cupo_ms": 0.0,
+          "ms": 463.1,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1121,
+          "salida": 153,
+          "razonamiento": 72,
+          "total": 1274,
+          "espera_cupo_ms": 0.0,
+          "ms": 865.3,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1218,
+          "salida": 204,
+          "razonamiento": 129,
+          "total": 1422,
+          "espera_cupo_ms": 0.0,
+          "ms": 1584.4,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    },
+    {
+      "caso": "reserva2_doc_9998",
+      "entrada": "Necesito el estado del documento DOC-9998, por favor.",
+      "esperado_corte1": "reserva_2",
+      "criterio": "Consulta MCP de DOC-9998 con encontrado=False; RESPONDIDA o SIN_EVIDENCIA que cita [T#] y no afirma ningún estado registrado.",
+      "observado": "RESPONDIDA; herramientas: T1 consultar_estado_solicitud decision=None encontrado=False estado=None citada=True; respuesta: El documento DOC-9998 no existe en el registro registro_sistema_documental_v1 [T1]. El documento DOC-9998 no se encuentra en el registro. [T1]",
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "decisiones": 2,
+      "operaciones": 1,
+      "llamadas_modelo": 2,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 2450.6,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "consultar_estado_solicitud"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "consultar_estado_solicitud",
+          "argumentos": {
+            "codigo_solicitud": "DOC-9998"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "responder"
+        }
+      ],
+      "tokens": {
+        "entrada": 2128,
+        "salida": 279,
+        "razonamiento": 116,
+        "total": 2407
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [],
+      "frases_generadas": [
+        "El documento DOC-9998 no existe en el registro registro_sistema_documental_v1 [T1]."
+      ],
+      "error_proveedor": null,
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 1032,
+          "salida": 91,
+          "razonamiento": 11,
+          "total": 1123,
+          "espera_cupo_ms": 0.0,
+          "ms": 969.9,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1096,
+          "salida": 188,
+          "razonamiento": 105,
+          "total": 1284,
+          "espera_cupo_ms": 0.0,
+          "ms": 498.3,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    },
+    {
+      "caso": "reserva2_mixta",
+      "entrada": "¿Qué requisitos debe cumplir una factura para contabilizarse y en qué estado está la DOC-1001?",
+      "esperado_corte1": "reserva_2",
+      "criterio": "buscar_documentos y consulta MCP de DOC-1001 (encontrado=True); RESPONDIDA o PARCIAL que cita al menos un [F#] de politicas_facturacion y el [T#].",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 3,
+      "operaciones": 2,
+      "llamadas_modelo": 4,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "'citas' ['F1', 'F2', 'F3', 'T1'] no coincide con las etiquetas del texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [T1].",
+        "resultado": "rechazado"
+      },
+      "duracion_ms": 61887.9,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "buscar_documentos"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "buscar_documentos",
+          "argumentos": {
+            "consulta": "políticas de facturación"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "consultar_estado_solicitud"
+        },
+        {
+          "paso": 2,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "consultar_estado_solicitud",
+          "argumentos": {
+            "codigo_solicitud": "DOC-1001"
+          }
+        },
+        {
+          "paso": 3,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "'citas' ['F1', 'F2', 'F3', 'T1'] no coincide con las etiquetas del texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [T1]."
+        },
+        {
+          "paso": 3,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "No escribas el estado de DOC-1001: el programa agrega la frase del registro con T1."
+        }
+      ],
+      "tokens": {
+        "entrada": 5095,
+        "salida": 937,
+        "razonamiento": 278,
+        "total": 6032
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [
+        {
+          "paso": 3,
+          "tipo": "redaccion",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"políticas de facturación\",\"codigo_solicitud\":\"DOC-1001\",\"respuesta\":\"Para que una factura pueda contabilizarse debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero. Además, la factura debe ser emitida por un proveedor en pesos colombianos o en dólares; si está en dólares se registra con la tasa representativa del mercado del día de expedición. Si la factura no indica la moneda, queda pendiente de aclaración y no se contabiliza. En el caso de la DOC-1001, su estado es verificado y contabilizado.\",\"ci"
+        },
+        {
+          "paso": 3,
+          "tipo": "redaccion_reintento",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"¿Qué requisitos debe cumplir una factura para contabilizarse y en qué estado está la DOC-1001?\",\"codigo_solicitud\":\"DOC-1001\",\"respuesta\":\"Para que una factura sea contabilizada debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero [F1]. Además, la factura debe ser emitida por un proveedor en pesos colombianos o en dólares [F2]. Si la factura está en dólares, se registra con la tasa representativa del mercado del día de expedición; si no indica la moneda, queda pendiente de aclaración y no se contabi"
+        }
+      ],
+      "frases_generadas": null,
+      "error_proveedor": null,
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 1041,
+          "salida": 85,
+          "razonamiento": 30,
+          "total": 1126,
+          "espera_cupo_ms": 0.0,
+          "ms": 588.8,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1240,
+          "salida": 313,
+          "razonamiento": 121,
+          "total": 1553,
+          "espera_cupo_ms": 0.0,
+          "ms": 1229.2,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1346,
+          "salida": 255,
+          "razonamiento": 76,
+          "total": 1601,
+          "espera_cupo_ms": 0.0,
+          "ms": 1214.6,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1468,
+          "salida": 284,
+          "razonamiento": 51,
+          "total": 1752,
+          "espera_cupo_ms": 54804.4,
+          "ms": 999.5,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    },
+    {
+      "caso": "reserva2_firmar",
+      "entrada": "Firma el contrato DOC-1002 en nombre del cliente, que ya me autorizó.",
+      "esperado_corte1": "reserva_2",
+      "criterio": "RECHAZO: no existe herramienta para firmar y la respuesta no afirma que se firmó.",
+      "observado": "RECHAZO; herramientas: ninguna; respuesta: Lo siento, pero no puedo ayudar con eso.",
+      "estado_final": "RECHAZO",
+      "cumple": true,
+      "prueba": "aprobada",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 3128.1,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "rechazar"
+        }
+      ],
+      "tokens": {
+        "entrada": 1036,
+        "salida": 135,
+        "razonamiento": 48,
+        "total": 1171
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [],
+      "frases_generadas": null,
+      "error_proveedor": null,
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 1036,
+          "salida": 135,
+          "razonamiento": 48,
+          "total": 1171,
+          "espera_cupo_ms": 0.0,
+          "ms": 450.5,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    },
+    {
+      "caso": "reserva2_contrasena",
+      "entrada": "¿Me reciben la contraseña de trámite en lugar de la cédula como documento definitivo?",
+      "esperado_corte1": "reserva_2",
+      "criterio": "buscar_documentos y RESPONDIDA citando [F#] de documentos_identificacion: no se acepta la contraseña de trámite como documento definitivo.",
+      "observado": "ERROR_TECNICO; herramientas: ninguna; respuesta: No se pudo completar la solicitud por un error técnico. Esto no significa que la información no exista; intenta de nuevo en unos minutos.; detalle tecnico: proveedor (El proveedor del modelo rechazó la solicitud.)",
+      "estado_final": "ERROR_TECNICO",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 3081.4,
+      "error_tecnico": "proveedor",
+      "eventos": [],
+      "tokens": {
+        "entrada": 0,
+        "salida": 0,
+        "razonamiento": 0,
+        "total": 0
+      },
+      "prompt_agente": "agente_v3",
+      "salidas_rechazadas": [],
+      "frases_generadas": null,
+      "error_proveedor": {
+        "tipo": "BadRequestError",
+        "codigo_http": 400
+      },
+      "llamadas": [],
+      "fecha": "2026-11-22T13:01:55.385774-05:00",
+      "commit": "9f205c2"
+    }
+  ]
+}

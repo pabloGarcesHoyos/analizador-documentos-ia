@@ -266,6 +266,17 @@ class Almacenamiento:
             raise ErrorAlmacenamiento("Supabase no confirmó la decisión.")
         return filas[0]
 
+    def obtener_accion_informe(self, token: str, accion_id: str) -> dict:
+        accion_id = _uuid(accion_id, "La acción")
+        cliente, usuario_id = self._abrir(token)
+        filas = self._ejecutar(
+            cliente.table("acciones_informe").select("id,conversacion_id,usuario_id,mensaje_id,decision,resultado,destino,huella_contenido,creada_en")
+            .eq("id", accion_id).eq("usuario_id", usuario_id).limit(1)
+        )
+        if not filas or filas[0].get("usuario_id") != usuario_id:
+            raise AccesoDenegado("La acción no existe o no pertenece al usuario.")
+        return filas[0]
+
     def registrar_resultado_informe(self, token: str, accion_id: str, resultado: str) -> dict:
         accion_id = _uuid(accion_id, "La acción")
         if resultado not in RESULTADOS:

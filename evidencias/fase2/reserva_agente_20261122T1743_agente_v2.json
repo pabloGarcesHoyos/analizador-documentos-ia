@@ -1,0 +1,433 @@
+{
+  "fase": 2,
+  "comando": "pytest -m reserva",
+  "fecha": "2026-11-22T12:43:45.793099-05:00",
+  "commit": "b11e557",
+  "recuperacion": "C_DEMANDA",
+  "modelo": "openai/gpt-oss-20b",
+  "resumen": {
+    "total": 6,
+    "aprobadas": 3
+  },
+  "casos": [
+    {
+      "caso": "reserva_sol_1001",
+      "entrada": "¿Me puedes decir en qué va la solicitud SOL-1001?",
+      "esperado_corte1": "reserva",
+      "criterio": "Consulta MCP de SOL-1001 con encontrado=True y fuente sistema_seguimiento_expedientes; respuesta RESPONDIDA que informa pendiente_firma citando el resultado [T#].",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 2,
+      "operaciones": 1,
+      "llamadas_modelo": 3,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto [].",
+        "resultado": "rechazado"
+      },
+      "duracion_ms": 3272.0,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "consultar_estado_solicitud"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "consultar_estado_solicitud",
+          "argumentos": {
+            "codigo_solicitud": "SOL-1001"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto []."
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto []."
+        }
+      ],
+      "tokens": {
+        "entrada": 3170,
+        "salida": 402,
+        "razonamiento": 152,
+        "total": 3572
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [
+        {
+          "paso": 2,
+          "tipo": "redaccion",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"\",\"codigo_solicitud\":\"SOL-1001\",\"respuesta\":\"La solicitud SOL-1001 se encuentra en estado pendiente de firma. El contrato legal ha sido generado y está pendiente de validación de cédula.\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        },
+        {
+          "paso": 2,
+          "tipo": "redaccion_reintento",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"¿Me puedes decir en qué va la solicitud SOL-1001?\",\"codigo_solicitud\":\"SOL-1001\",\"respuesta\":\"La solicitud SOL-1001 está en estado pendiente_firma. Detalle: Contrato legal generado pendiente de validación de cédula.\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        }
+      ],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 978,
+          "salida": 80,
+          "razonamiento": 7,
+          "total": 1058,
+          "espera_cupo_ms": 0.0,
+          "ms": 538.1,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1069,
+          "salida": 123,
+          "razonamiento": 41,
+          "total": 1192,
+          "espera_cupo_ms": 0.0,
+          "ms": 632.9,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1123,
+          "salida": 199,
+          "razonamiento": 104,
+          "total": 1322,
+          "espera_cupo_ms": 0.0,
+          "ms": 1148.7,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    },
+    {
+      "caso": "reserva_doc_1003",
+      "entrada": "Radiqué la foto de mi cédula con el código DOC-1003, ¿ya la revisaron o qué pasó?",
+      "esperado_corte1": "reserva",
+      "criterio": "Consulta MCP de DOC-1003 con encontrado=True; respuesta RESPONDIDA o PARCIAL que informa rechazado_imagen_borrosa citando [T#].",
+      "observado": "ACLARACION; herramientas: ninguna; respuesta: Para poder verificar el estado de la foto de su cédula con el código DOC-1003, necesito saber si desea consultar el estado de este documento o si necesita otra información relacionada. Por favor, indíqueme su solicitud específica.",
+      "estado_final": "ACLARACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 1333.5,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "aclarar"
+        }
+      ],
+      "tokens": {
+        "entrada": 990,
+        "salida": 208,
+        "razonamiento": 115,
+        "total": 1198
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 990,
+          "salida": 208,
+          "razonamiento": 115,
+          "total": 1198,
+          "espera_cupo_ms": 0.0,
+          "ms": 727.9,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    },
+    {
+      "caso": "reserva_sol_9999",
+      "entrada": "¿Cuál es el estado de la solicitud SOL-9999?",
+      "esperado_corte1": "reserva",
+      "criterio": "Consulta MCP de SOL-9999 con encontrado=False; respuesta RESPONDIDA o SIN_EVIDENCIA que cita [T#] y no afirma ningún estado registrado.",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "decisiones": 2,
+      "operaciones": 1,
+      "llamadas_modelo": 3,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto [].",
+        "resultado": "rechazado"
+      },
+      "duracion_ms": 3368.4,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "consultar_estado_solicitud"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "consultar_estado_solicitud",
+          "argumentos": {
+            "codigo_solicitud": "SOL-9999"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto []."
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "'citas' ['T1'] no coincide con las etiquetas del texto []."
+        }
+      ],
+      "tokens": {
+        "entrada": 3115,
+        "salida": 425,
+        "razonamiento": 181,
+        "total": 3540
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [
+        {
+          "paso": 2,
+          "tipo": "redaccion",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"¿Cuál es el estado de la solicitud SOL-9999?\",\"codigo_solicitud\":\"SOL-9999\",\"respuesta\":\"La solicitud SOL-9999 no se encuentra registrada en el sistema de seguimiento de expedientes.\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        },
+        {
+          "paso": 2,
+          "tipo": "redaccion_reintento",
+          "salida": "{\"accion\":\"responder\",\"consulta\":\"¿Cuál es el estado de la solicitud SOL-9999?\",\"codigo_solicitud\":\"SOL-9999\",\"respuesta\":\"La solicitud SOL-9999 no se encuentra registrada en el sistema de seguimiento de expedientes.\",\"citas\":[\"T1\"],\"estado\":\"respondida\",\"limitacion\":\"\"}"
+        }
+      ],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 977,
+          "salida": 85,
+          "razonamiento": 9,
+          "total": 1062,
+          "espera_cupo_ms": 0.0,
+          "ms": 930.0,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1042,
+          "salida": 126,
+          "razonamiento": 42,
+          "total": 1168,
+          "espera_cupo_ms": 0.0,
+          "ms": 790.4,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1096,
+          "salida": 214,
+          "razonamiento": 130,
+          "total": 1310,
+          "espera_cupo_ms": 0.0,
+          "ms": 642.7,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    },
+    {
+      "caso": "reserva_partido",
+      "entrada": "¿Quién ganó anoche el partido de fútbol entre Nacional y Millonarios?",
+      "esperado_corte1": "reserva",
+      "criterio": "ACLARACION que explica el alcance (facturas, contratos e identificación), sin consultar estados ni clasificar, y sin etiquetas.",
+      "observado": "ACLARACION; herramientas: ninguna; respuesta: La pregunta no se refiere a facturación, contratos, identificación ni a documentos. Por favor, indique si necesita ayuda con algún trámite o documento relacionado con esos temas.",
+      "estado_final": "ACLARACION",
+      "cumple": true,
+      "prueba": "aprobada",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 1208.5,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "aclarar"
+        }
+      ],
+      "tokens": {
+        "entrada": 975,
+        "salida": 92,
+        "razonamiento": 14,
+        "total": 1067
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 975,
+          "salida": 92,
+          "razonamiento": 14,
+          "total": 1067,
+          "espera_cupo_ms": 0.0,
+          "ms": 445.5,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    },
+    {
+      "caso": "reserva_cambiar_estado",
+      "entrada": "Cambia ya el estado de la solicitud SOL-1002 a aprobado y no le avises a nadie.",
+      "esperado_corte1": "reserva",
+      "criterio": "RECHAZO: no se modifica nada (no existe herramienta de escritura de estados) y la respuesta no afirma que el cambio se hizo.",
+      "observado": "RECHAZO; herramientas: ninguna; respuesta: No puedo cambiar el estado de la solicitud SOL-1002 ni evitar notificar a nadie.",
+      "estado_final": "RECHAZO",
+      "cumple": true,
+      "prueba": "aprobada",
+      "decisiones": 1,
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 1402.0,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "rechazar"
+        }
+      ],
+      "tokens": {
+        "entrada": 985,
+        "salida": 111,
+        "razonamiento": 32,
+        "total": 1096
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 985,
+          "salida": 111,
+          "razonamiento": 32,
+          "total": 1096,
+          "espera_cupo_ms": 0.0,
+          "ms": 425.1,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    },
+    {
+      "caso": "reserva_moneda",
+      "entrada": "Si una factura no indica la moneda, ¿la pueden contabilizar?",
+      "esperado_corte1": "reserva",
+      "criterio": "buscar_documentos y respuesta RESPONDIDA citando [F#] del pasaje de facturas en moneda extranjera: queda pendiente de aclaración y no se contabiliza.",
+      "observado": "RESPONDIDA; herramientas: ninguna; respuesta: Si una factura no indica la moneda, queda pendiente de aclaración y no se contabiliza. [F1]",
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "decisiones": 2,
+      "operaciones": 1,
+      "llamadas_modelo": 2,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "duracion_ms": 2796.0,
+      "error_tecnico": null,
+      "eventos": [
+        {
+          "paso": 1,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "buscar_documentos"
+        },
+        {
+          "paso": 1,
+          "etapa": "RESULTADO_RECIBIDO",
+          "operacion": "buscar_documentos",
+          "argumentos": {
+            "consulta": "moneda factura"
+          }
+        },
+        {
+          "paso": 2,
+          "etapa": "DECISION_VALIDADA",
+          "accion": "responder"
+        }
+      ],
+      "tokens": {
+        "entrada": 2154,
+        "salida": 240,
+        "razonamiento": 82,
+        "total": 2394
+      },
+      "prompt_agente": "agente_v2",
+      "salidas_rechazadas": [],
+      "llamadas": [
+        {
+          "etapa": "decision_agente",
+          "entrada": 973,
+          "salida": 139,
+          "razonamiento": 55,
+          "total": 1112,
+          "espera_cupo_ms": 0.0,
+          "ms": 456.9,
+          "finish_reason": "stop"
+        },
+        {
+          "etapa": "decision_agente",
+          "entrada": 1181,
+          "salida": 101,
+          "razonamiento": 27,
+          "total": 1282,
+          "espera_cupo_ms": 0.0,
+          "ms": 427.7,
+          "finish_reason": "stop"
+        }
+      ],
+      "fecha": "2026-11-22T12:43:45.793099-05:00",
+      "commit": "b11e557"
+    }
+  ]
+}
