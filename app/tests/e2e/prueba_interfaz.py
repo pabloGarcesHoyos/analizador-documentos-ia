@@ -9,6 +9,7 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from dotenv import dotenv_values
 from playwright.sync_api import sync_playwright
@@ -22,17 +23,21 @@ import app as ap
 
 URL = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:7860").rstrip("/")
 SALIDA = RAIZ / "evidencias" / "fase3"
-CAPTURAS = SALIDA / "capturas"
+CAPTURAS = SALIDA / "capturas_v2"
+RESULTADOS = SALIDA / "prueba_interfaz_v2.json"
+RESULTADOS_ANTERIORES = SALIDA / "prueba_interfaz.json"
 ENTRADA = "Escribe tu pregunta o pega el texto de un documento"
 SELECTOR_ENTRADA = f'textarea[placeholder="{ENTRADA}"]'
 ESPERA_RESPUESTA = 150000
 CREDENCIALES = dotenv_values(APP / ".env.pruebas")
 CORREO_A, CLAVE_A = CREDENCIALES["PRUEBA_A_EMAIL"], CREDENCIALES["PRUEBA_A_PASSWORD"]
 CORREO_B, CLAVE_B = CREDENCIALES["PRUEBA_B_EMAIL"], CREDENCIALES["PRUEBA_B_PASSWORD"]
-CLAVES = [CLAVE_A, CLAVE_B]
+CORREO_D, CLAVE_D = CREDENCIALES.get("PRUEBA_DEMO_EMAIL"), CREDENCIALES.get("PRUEBA_DEMO_PASSWORD")
+CLAVES = [c for c in (CLAVE_A, CLAVE_B, CLAVE_D) if c]
+CORREOS = [c for c in (CORREO_A, CORREO_B, CORREO_D) if c]
 PATRONES_SECRETOS = [re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"), re.compile(r"gsk_[A-Za-z0-9]{10,}"),
                      re.compile(r"sb_(?:publishable|secret)_[A-Za-z0-9_-]{10,}")]
-PALABRAS_INGLES = ["Submit", "Clear", "Loading", "Error", "Copy", "Retry", "Undo", "Share", "Built with", "Use via API", "Settings", "Download",
+PALABRAS_INGLES = ["Toggle", "Sidebar", "Submit", "Clear", "Loading", "Error", "Copy", "Retry", "Undo", "Share", "Built with", "Use via API", "Settings", "Download",
                    "Drop File", "Upload", "processing", "queue", "Click", "Like", "Dislike", "conversation", "message", "Remove", "Close"]
 TERMINOS_INTERNOS = re.compile(r"\b(enrutador|flujo|ruta|herramienta|traza|RAG|MCP|LLM|Groq|prompt|json|OK_VALIDADO|OK_PIDE_ACLARACION|OK_REQUIERE_HUMANO|"
                                r"RESPONDIDA|ERROR_TECNICO|ERROR_VALIDACION|SIN_EVIDENCIA|PROPUESTA_INFORME|ACLARACION|RECHAZO)\b")
@@ -43,7 +48,7 @@ ATRIBUTOS_A_REVISAR: list[tuple[str, str]] = []
 
 def limpiar(texto: str) -> str:
     texto = str(texto)
-    for valor in (CLAVE_A, CLAVE_B, CORREO_A, CORREO_B):
+    for valor in CLAVES + CORREOS:
         texto = texto.replace(valor, "<oculto>")
     for patron in PATRONES_SECRETOS:
         texto = patron.sub("<oculto>", texto)
@@ -57,6 +62,7 @@ class Registro:
         self.consola: list[dict] = []
         self.http: list[dict] = []
         self.tiempos: list[dict] = []
+        self.esperas_cupo: list[str] = []
         self.numero = 0
 
     def escuchar(self, pagina, nombre: str) -> None:
@@ -74,7 +80,7 @@ class Registro:
         for patron in PATRONES_SECRETOS:
             if patron.search(texto):
                 raise AssertionError("La captura mostraría un token o una clave; no se guarda.")
-        for correo in (CORREO_A, CORREO_B):
+        for correo in CORREOS:
             fuera = texto.replace(f"Sesión iniciada como {correo}", "")
             if correo in fuera:
                 raise AssertionError("La captura mostraría un correo sin ocultar; no se guarda.")
@@ -131,7 +137,8 @@ def ultima_respuesta(pagina) -> str:
 def indicador(pagina) -> str:
     textos = pagina.evaluate("() => [...document.querySelectorAll('.prose')].filter(e => !e.closest('[role=log]') && e.offsetParent !== null)"
                              ".map(e => e.innerText.trim())")
-    return next((t for t in textos if any(v in t for v in ap.ESTADOS.values()) or t.startswith("Conversación")), "")
+    propios = list(ap.ESTADOS.values()) + [ap.PROCESANDO, ap.ESPERANDO_CUPO]
+    return next((t for t in textos if any(v in t for v in propios) or t.startswith("Conversación")), "")
 
 
 def nueva(pagina) -> None:
@@ -147,8 +154,14 @@ def enviar(pagina, texto: str, durante=None) -> int:
     if durante:
         pagina.wait_for_function(f"() => document.querySelector('{SELECTOR_ENTRADA}').disabled", timeout=5000)
         durante()
-    pagina.wait_for_function(f"() => document.querySelectorAll('.message-row.bot-row').length > {filas_antes} "
-                             f"&& !document.querySelector('{SELECTOR_ENTRADA}').disabled", timeout=ESPERA_RESPUESTA)
+    condicion = (f"() => document.querySelectorAll('.message-row.bot-row').length > {filas_antes} "
+                 f"&& !document.querySelector('{SELECTOR_ENTRADA}').disabled")
+    while not pagina.evaluate(condicion):
+        if time.perf_counter() - inicio > ESPERA_RESPUESTA / 1000:
+            raise TimeoutError("La respuesta no llegó a tiempo.")
+        if ap.ESPERANDO_CUPO in indicador(pagina) and not any(e.startswith(texto) for e in R.esperas_cupo):
+            R.esperas_cupo.append(f"{texto}: {R.capturar(pagina, 'aviso_esperando_cupo')}")
+        pagina.wait_for_timeout(250)
     pagina.wait_for_timeout(300)
     milisegundos = round((time.perf_counter() - inicio) * 1000)
     R.tiempos.append({"pregunta": texto, "ms": milisegundos})
@@ -163,7 +176,31 @@ def ids_lista(pagina) -> list[str]:
     return pagina.evaluate("() => [...document.querySelectorAll('input[type=radio]')].map(r => r.value)")
 
 
+def todas_las_de_la_lista(pagina) -> list[str]:
+    while boton_visible(pagina, "Ver más"):
+        antes = len(ids_lista(pagina))
+        pagina.get_by_role("button", name="Ver más", exact=True).click()
+        pagina.wait_for_function(f"() => document.querySelectorAll('input[type=radio]').length > {antes}", timeout=15000)
+    return ids_lista(pagina)
+
+
+def ids_de_supabase(configuracion, correo: str, clave: str) -> set[str]:
+    autenticacion = al.Autenticacion(configuracion)
+    sesion = autenticacion.iniciar_sesion(correo, clave)
+    try:
+        return {c["id"] for c in al.Almacenamiento(configuracion).listar_conversaciones(sesion.access_token, al.MAX_CONVERSACIONES)}
+    finally:
+        autenticacion.cerrar_sesion(sesion.access_token, sesion.refresh_token)
+
+
+def panel_abierto(pagina) -> bool:
+    return pagina.evaluate("() => { const b = document.querySelector('#panel-conversaciones .label-wrap'); return !!b && b.classList.contains('open'); }")
+
+
 def abrir(pagina, conversacion_id: str) -> None:
+    if not panel_abierto(pagina):
+        pagina.locator("#panel-conversaciones .label-wrap").click()
+        pagina.wait_for_timeout(500)
     pagina.locator(f'label:has(input[value="{conversacion_id}"])').click()
     pagina.wait_for_function(f"() => document.querySelector('input[value=\"{conversacion_id}\"]').checked", timeout=15000)
     pagina.wait_for_timeout(2500)
@@ -201,6 +238,8 @@ def pedir(metodo: str, ruta: str, cuerpo: dict | None = None) -> tuple[int, str]
 
 
 def main() -> None:
+    if not (CORREO_D and CLAVE_D):
+        sys.exit("Faltan PRUEBA_DEMO_EMAIL o PRUEBA_DEMO_PASSWORD en app/.env.pruebas.")
     CAPTURAS.mkdir(parents=True, exist_ok=True)
     for vieja in CAPTURAS.glob("*.png"):
         vieja.unlink()
@@ -214,7 +253,7 @@ def main() -> None:
         a.goto(URL)
 
         def paso1(c):
-            a.locator("input[type=email]").fill(CORREO_A)
+            a.locator("input[type=email]").fill(CORREO_D)
             a.locator("input[type=password]").fill("clave-incorrecta-de-prueba")
             a.get_by_role("button", name="Iniciar sesión").click()
             a.get_by_text("No se pudo iniciar sesión").wait_for(timeout=20000)
@@ -222,17 +261,21 @@ def main() -> None:
             c.append(R.capturar(a, "login_contrasena_incorrecta"))
             aviso = a.get_by_text("No se pudo iniciar sesión").inner_text()
             return f"Aviso: \"{aviso}\". Caja de contraseña vacía: {'sí' if vacia else 'no'}.", vacia and "revisa el correo y la contraseña" in aviso
-        R.paso(1, "Login de A con contraseña incorrecta", "Aviso claro y caja de contraseña vacía.", paso1)
+        R.paso(1, "Login del usuario de demostración con contraseña incorrecta", "Aviso claro y caja de contraseña vacía.", paso1)
 
         def paso2(c):
+            a.locator("input[type=password]").fill(CLAVE_D)
             inicio = time.perf_counter()
-            iniciar_sesion(a, CORREO_A, CLAVE_A)
+            a.get_by_role("button", name="Iniciar sesión").click()
+            a.get_by_text("Sesión iniciada como").wait_for(timeout=30000)
             ms = round((time.perf_counter() - inicio) * 1000)
-            vacia = a.locator("input[type=password]").input_value() == ""
+            valores = a.evaluate("() => [...document.querySelectorAll('input[type=password]')].map(e => e.value)")
+            vacia = all(v == "" for v in valores)
+            detalle = "la caja ya no está en la página" if not valores else f"caja de contraseña vacía: {'sí' if vacia else 'no'}"
             c.append(R.capturar(a, "login_correcto"))
             visible = boton_visible(a, "Cerrar sesión") and a.locator(SELECTOR_ENTRADA).is_visible()
-            return f"Entra a la vista de conversaciones en {ms} ms; caja de contraseña vacía: {'sí' if vacia else 'no'}.", visible and vacia
-        R.paso(2, "Login correcto de A", "Entra a la aplicación y la contraseña no queda en la caja.", paso2)
+            return f"Entra a la vista de conversaciones en {ms} ms; {detalle}.", visible and vacia
+        R.paso(2, "Login correcto del usuario de demostración", "Entra a la aplicación y la contraseña no queda en la caja.", paso2)
         estado["ids_a_previos"] = set(ids_lista(a))
 
         def paso3(c):
@@ -251,6 +294,7 @@ def main() -> None:
             bloqueo["entrada"] = entrada(a).is_disabled()
             bloqueo["botones"] = {n: a.get_by_role("button", name=n, exact=True).first.is_disabled() for n in ("Enviar", "Nueva conversación", "Cerrar sesión")}
             bloqueo["lista"] = a.evaluate("() => [...document.querySelectorAll('input[type=radio]')].every(r => r.disabled)")
+            bloqueo["indicador"] = indicador(a)
             bloqueo["captura"] = R.capturar(a, "entrada_bloqueada_mientras_atiende")
 
         def paso4(c):
@@ -293,9 +337,9 @@ def main() -> None:
             if "captura" not in bloqueo:
                 return "No se pudo observar el bloqueo durante la espera del paso 4.", False
             c.append(bloqueo["captura"])
-            ok = bloqueo["entrada"] and all(bloqueo["botones"].values()) and bloqueo["lista"]
+            ok = bloqueo["entrada"] and all(bloqueo["botones"].values()) and bloqueo["lista"] and bloqueo["indicador"] in (ap.PROCESANDO, ap.ESPERANDO_CUPO)
             return (f"Durante la espera del paso 4: entrada desactivada {bloqueo['entrada']}, botones desactivados {bloqueo['botones']}, "
-                    f"lista de conversaciones desactivada {bloqueo['lista']}."), ok
+                    f"lista de conversaciones desactivada {bloqueo['lista']}, indicador \"{bloqueo['indicador']}\"."), ok
         R.paso(8, "Bloqueo mientras atiende", "Entrada, botones y lista desactivados durante la espera.", paso8)
 
         def paso9(c):
@@ -332,7 +376,7 @@ def main() -> None:
             igual = descargado == estado["contenido_aprobar"]
             c.append(R.capturar(a, "aprobado_un_solo_archivo"))
             autenticacion = al.Autenticacion(configuracion)
-            sesion = autenticacion.iniciar_sesion(CORREO_A, CLAVE_A)
+            sesion = autenticacion.iniciar_sesion(CORREO_D, CLAVE_D)
             decisiones = al.Almacenamiento(configuracion).decisiones_informe(sesion.access_token, estado["informe_aprobar"])
             autenticacion.cerrar_sesion(sesion.access_token, sesion.refresh_token)
             registradas = [(d["decision"], d["resultado"]) for d in decisiones.values()]
@@ -376,7 +420,7 @@ def main() -> None:
             a.locator("input[type=password]").wait_for(timeout=20000)
             pide = a.get_by_role("button", name="Iniciar sesión").is_visible() and not a.locator('[role="log"]').filter(visible=True).count()
             c.append(R.capturar(a, "recarga_pide_login"))
-            iniciar_sesion(a, CORREO_A, CLAVE_A)
+            iniciar_sesion(a, CORREO_D, CLAVE_D)
             abrir(a, estado["mixta"])
             despues_mixta = texto_chat(a)
             c.append(R.capturar(a, "mixta_tras_recargar"))
@@ -387,48 +431,59 @@ def main() -> None:
             return (f"Pide login tras recargar: {pide}. Mixta idéntica: {antes_mixta == despues_mixta}. Estado idéntica: {antes_estado == despues_estado}. "
                     f"La respuesta mixta {'incluye' if limitacion else 'no incluye'} limitación."), ok
         R.paso(13, "Cambio entre conversaciones y recarga de la página", "Pide login y todo se ve idéntico: estado, limitación, fuentes y consultas.", paso13)
-        estado["ids_a"] = set(ids_lista(a))
-        estado["texto_a"] = "verificado_y_contabilizado"
+        estado["ids_demo"] = ids_de_supabase(configuracion, CORREO_D, CLAVE_D)
+        estado["ids_a"] = ids_de_supabase(configuracion, CORREO_A, CLAVE_A)
 
+        contexto_u = navegador.new_context(locale="es-ES", viewport={"width": 1366, "height": 768})
+        u = contexto_u.new_page()
+        R.escuchar(u, "A")
         contexto_b = navegador.new_context(locale="es-ES", viewport={"width": 1366, "height": 768})
         b = contexto_b.new_page()
         R.escuchar(b, "B")
 
         def paso14(c):
+            u.goto(URL)
+            iniciar_sesion(u, CORREO_A, CLAVE_A)
             b.goto(URL)
             iniciar_sesion(b, CORREO_B, CLAVE_B)
-            ids_b = set(ids_lista(b))
-            comunes = ids_b & estado["ids_a"]
+            c.append(R.capturar(u, "a_en_su_contexto"))
+            ids_b = set(todas_las_de_la_lista(b))
+            comunes = ids_b & (estado["ids_a"] | estado["ids_demo"])
             c.append(R.capturar(b, "b_sin_conversaciones_de_a"))
-            objetivo = estado["mixta"]
+            objetivo = sorted(estado["ids_a"])[0]
             b.goto(f"{URL}/?conversacion={objetivo}")
             iniciar_sesion(b, CORREO_B, CLAVE_B)
-            por_url = objetivo not in ids_lista(b) and "verificado_y_contabilizado" not in texto_chat(b)
+            por_url = objetivo not in todas_las_de_la_lista(b) and not texto_chat(b).strip()
             c.append(R.capturar(b, "b_url_con_uuid_de_a"))
             info = b.evaluate("async (u) => { const r = await fetch(u + '/config'); return r.ok ? await r.json() : null; }", URL)
-            intento = "sin configuración"
-            negado = True
-            if info:
-                radio = next((x["id"] for x in info.get("components", []) if x.get("props", {}).get("label") == "Tus conversaciones"), None)
-                indice = next((i for i, d in enumerate(info.get("dependencies", [])) if any(t[0] == radio for t in d.get("targets", []))), None)
-                sesion_falsa = uuid.uuid4().hex[:11]
-                codigo, cuerpo = pedir("POST", "/gradio_api/queue/join", {"data": [None, objetivo], "fn_index": indice, "session_hash": sesion_falsa,
-                                                                         "event_data": None, "trigger_id": radio})
-                intento = f"POST /gradio_api/queue/join al evento de selección con el UUID de A: HTTP {codigo}"
-                if codigo == 200:
-                    _, datos = pedir("GET", f"/gradio_api/queue/data?session_hash={sesion_falsa}")
-                    negado = "verificado_y_contabilizado" not in datos and "Fuentes" not in datos
-                    intento += f"; datos devueltos con contenido de A: {'no' if negado else 'sí'}"
-            ok = not comunes and por_url and negado
-            return (f"Conversaciones de A en la lista de B: {len(comunes)}. Por URL con el UUID de A: sin acceso {por_url}. "
-                    f"La interfaz no tiene campo que acepte un UUID; la lista solo ofrece las de B. {intento}."), ok
+            radio = next((x["id"] for x in info.get("components", []) if x.get("props", {}).get("label") == "Conversaciones recientes"), None)
+            indice = next((i for i, d in enumerate(info.get("dependencies", [])) if any(t[0] == radio for t in d.get("targets", []))), None)
+            codigo, cuerpo = pedir("POST", "/gradio_api/queue/join", {"data": [None, objetivo], "fn_index": indice, "session_hash": uuid.uuid4().hex[:11],
+                                                                     "event_data": None, "trigger_id": radio})
+            negado = codigo == 400 and "Sesión no válida" in cuerpo
+            ok = not comunes and por_url and negado and len(estado["ids_a"]) > 0
+            return (f"A y B con sesión al mismo tiempo en contextos separados. Conversaciones de A o del usuario de demostración en la lista completa de B: "
+                    f"{len(comunes)} de {len(estado['ids_a']) + len(estado['ids_demo'])}. Por URL con el UUID de una conversación de A: sin acceso {por_url}. "
+                    f"La interfaz no tiene campo que acepte un UUID. POST /gradio_api/queue/join al evento de selección con ese UUID y sin sesión: "
+                    f"HTTP {codigo}, {limpiar(cuerpo)[:80]}."), ok
         R.paso(14, "B en otro contexto al mismo tiempo que A", "B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL.", paso14)
 
-        extras_secretos = {"A": secretos_en_navegador(contexto_a, a), "B": secretos_en_navegador(contexto_b, b)}
+        antes_ver_mas = len(ids_lista(u))
+        visible_ver_mas = boton_visible(u, "Ver más")
+        if visible_ver_mas:
+            u.get_by_role("button", name="Ver más", exact=True).click()
+            u.wait_for_function(f"() => document.querySelectorAll('input[type=radio]').length > {antes_ver_mas}", timeout=15000)
+        captura_ver_mas = R.capturar(u, "ver_mas_con_muchas_conversaciones")
+        despues_ver_mas = len(ids_lista(u))
+        R.extras.append({"revision": "Lista de 20 conversaciones con Ver más", "observado": f"A tiene {len(estado['ids_a'])} conversaciones. Al entrar se muestran "
+                         f"{antes_ver_mas} y Ver más está visible: {visible_ver_mas}. Tras Ver más se muestran {despues_ver_mas}.",
+                         "capturas": [captura_ver_mas], "estado": "aprobado" if antes_ver_mas == 20 and visible_ver_mas and despues_ver_mas == 40 else "fallido"})
+
+        extras_secretos = {"demostración": secretos_en_navegador(contexto_a, a), "A": secretos_en_navegador(contexto_u, u), "B": secretos_en_navegador(contexto_b, b)}
 
         def paso15(c):
             resultados = []
-            for nombre, pagina in (("A", a), ("B", b)):
+            for nombre, pagina in (("demo", a), ("A", u), ("B", b)):
                 pagina.get_by_role("button", name="Cerrar sesión").click()
                 pagina.get_by_text("Sesión cerrada.").wait_for(timeout=20000)
                 sin_datos = not pagina.locator('[role="log"]').filter(visible=True).count() and "verificado_y_contabilizado" not in pagina.locator("body").inner_text()
@@ -445,7 +500,7 @@ def main() -> None:
                 resultados.append((nombre, sin_datos, atras, "app" if destino.startswith(URL) else "página en blanco, luego Adelante"))
             return "; ".join(f"{n}: sin datos visibles tras cerrar {s}; Atrás llevó a {d} y muestra el inicio de sesión sin datos {t}" for n, s, t, d in resultados) + ".", \
                 all(s and t for _, s, t, _ in resultados)
-        R.paso(15, "Cerrar sesión en los dos", "No queda nada visible y Atrás no reutiliza la sesión.", paso15)
+        R.paso(15, "Cerrar sesión en todos los contextos", "No queda nada visible y Atrás no reutiliza la sesión.", paso15)
 
         for nombre, ancho, alto in (("escritorio_1366x768", 1366, 768), ("celular_390x844", 390, 844)):
             contexto = navegador.new_context(locale="es-ES", viewport={"width": ancho, "height": alto})
@@ -454,17 +509,29 @@ def main() -> None:
             pagina.goto(URL)
             desborde_login = pagina.evaluate("() => document.documentElement.scrollWidth > document.documentElement.clientWidth")
             capturas = [R.capturar(pagina, f"vista_{nombre}_login")]
-            iniciar_sesion(pagina, CORREO_A, CLAVE_A)
+            iniciar_sesion(pagina, CORREO_D, CLAVE_D)
+            pagina.wait_for_timeout(1000)
+            plegado = not panel_abierto(pagina)
+            chat_visible = pagina.evaluate("() => { const c = document.querySelector('[role=log]'); if (!c) return false; const r = c.getBoundingClientRect();"
+                                           " return r.top < window.innerHeight && r.bottom > 0; }")
+            capturas.append(R.capturar(pagina, f"vista_{nombre}_al_entrar"))
             abrir(pagina, estado["mixta"])
+            capturas.append(R.capturar(pagina, f"vista_{nombre}_panel_abierto"))
+            pagina.locator("#panel-conversaciones .label-wrap").click()
+            pagina.wait_for_timeout(500)
             desborde_app = pagina.evaluate("() => document.documentElement.scrollWidth > document.documentElement.clientWidth")
             capturas.append(R.capturar(pagina, f"vista_{nombre}_conversacion"))
             pagina.get_by_role("button", name="Cerrar sesión").click()
-            R.extras.append({"revision": f"Vista {nombre}", "observado": f"Desborde horizontal en login: {desborde_login}; en conversación: {desborde_app}.",
-                             "capturas": capturas, "estado": "aprobado" if not (desborde_login or desborde_app) else "fallido"})
+            esperado_plegado = ancho < 768
+            ok = not (desborde_login or desborde_app) and plegado == esperado_plegado and (chat_visible or not esperado_plegado)
+            R.extras.append({"revision": f"Vista {nombre}", "observado": f"Desborde horizontal en login: {desborde_login}; en conversación: {desborde_app}. "
+                             f"Panel de conversaciones cerrado al entrar: {plegado}. Chat visible sin desplazarse: {chat_visible}.",
+                             "capturas": capturas, "estado": "aprobado" if ok else "fallido"})
             contexto.close()
 
         api_info = pedir("GET", "/gradio_api/info")
         api_llamada = pedir("POST", "/gradio_api/call/entrar", {"data": ["x", "y"]})
+        api_directa = pedir("POST", "/gradio_api/run/predict", {"data": [], "fn_index": 0})
         navegador.close()
 
     ingles = sorted({p for _, t in TEXTOS_A_REVISAR for p in PALABRAS_INGLES if re.search(rf"\b{re.escape(p)}\b", t)})
@@ -481,38 +548,57 @@ def main() -> None:
          f"{len([x for x in R.consola if x['tipo'] == 'warning'])} advertencias: {R.consola[:8]}", "capturas": [],
          "estado": "aprobado" if not [x for x in R.consola if x["tipo"] != "warning"] else "fallido"},
         {"revision": "Respuestas HTTP 4xx o 5xx", "observado": f"{len(R.http)}: {R.http[:10]}", "capturas": [], "estado": "aprobado" if not R.http else "fallido"},
-        {"revision": "Contraseñas o tokens en HTML, localStorage, sessionStorage y cookies", "observado": f"A: {extras_secretos['A'] or 'nada'}; B: {extras_secretos['B'] or 'nada'}.",
-         "capturas": [], "estado": "aprobado" if not (extras_secretos["A"] or extras_secretos["B"]) else "fallido"},
-        {"revision": "API de Gradio cerrada", "observado": f"GET /gradio_api/info: HTTP {api_info[0]}, {limpiar(api_info[1])[:120]}. "
-         f"POST /gradio_api/call/entrar: HTTP {api_llamada[0]}, {limpiar(api_llamada[1])[:120]}.", "capturas": [],
-         "estado": "aprobado" if api_info[1].strip() in ('{"named_endpoints":{},"unnamed_endpoints":{}}', "") and api_llamada[0] >= 400 else "fallido"},
+        {"revision": "Contraseñas o tokens en HTML, localStorage, sessionStorage y cookies",
+         "observado": "; ".join(f"{k}: {v or 'nada'}" for k, v in extras_secretos.items()) + ".", "capturas": [],
+         "estado": "aprobado" if not any(extras_secretos.values()) else "fallido"},
+        {"revision": "API de Gradio cerrada", "observado": f"GET /gradio_api/info: HTTP {api_info[0]}, {limpiar(api_info[1])[:80]}. "
+         f"POST /gradio_api/call/entrar: HTTP {api_llamada[0]}, {limpiar(api_llamada[1])[:80]}. POST /gradio_api/run/predict: HTTP {api_directa[0]}. "
+         "La cola sin sesión se revisa en el paso 14.", "capturas": [],
+         "estado": "aprobado" if all(r[0] == 404 for r in (api_info, api_llamada, api_directa)) else "fallido"},
+        {"revision": "Aviso propio de espera de cupo", "observado": ("Observado en: " + "; ".join(R.esperas_cupo)) if R.esperas_cupo else
+         "No hubo espera de cupo en esta corrida; el aviso está cubierto por pruebas unitarias.", "capturas": [e.split(": ")[-1] for e in R.esperas_cupo],
+         "estado": "informativo"},
         {"revision": "Tiempo de cada respuesta", "observado": "; ".join(f"\"{t['pregunta']}\": {t['ms']} ms" for t in R.tiempos) + ".", "capturas": [], "estado": "informativo"},
     ]
     escribir_informe()
+
+
+def celda(texto: Any) -> str:
+    return str(texto).replace("|", "/").replace("\n", " ")
+
+
+def seccion(titulo: str, datos: dict, carpeta: str, nota: str) -> list[str]:
+    enlaces = lambda nombres: " ".join(f"[{n}]({carpeta}/{n})" for n in nombres) or "sin captura"
+    aprobados = sum(p["estado"] == "aprobado" for p in datos["pasos"])
+    lineas = [f"## {titulo}", "", f"Fecha: {datos['fecha']}. Commit: `{datos['commit']}`. URL: {datos['url']}. Navegador: {datos['navegador']}, idioma es-ES.", "",
+              f"Resultado: {aprobados} de {len(datos['pasos'])} pasos aprobados.", "", nota, "",
+              "### Pasos", "", "| Paso | Esperado | Observado | Capturas | Tiempo (s) | Estado |", "|---|---|---|---|---|---|"]
+    for p in datos["pasos"]:
+        lineas.append(f"| {p['numero']}. {p['nombre']} | {celda(p['esperado'])} | {celda(p['observado'])} | {enlaces(p['capturas'])} | {p['segundos']} | {p['estado']} |")
+    lineas += ["", "### Revisiones adicionales", "", "| Revisión | Observado | Capturas | Estado |", "|---|---|---|---|"]
+    for r in datos["revisiones"]:
+        lineas.append(f"| {r['revision']} | {celda(r['observado'])} | {enlaces(r['capturas'])} | {r['estado']} |")
+    return lineas + [""]
 
 
 def escribir_informe() -> None:
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=RAIZ).stdout.strip()
     fecha = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     datos = {"fecha": fecha, "commit": commit, "url": URL, "navegador": "Chromium (Playwright 1.64.1)", "pasos": R.pasos, "revisiones": R.extras}
-    (SALIDA / "prueba_interfaz.json").write_text(json.dumps(datos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    aprobados = sum(p["estado"] == "aprobado" for p in R.pasos)
-    enlaces = lambda nombres: " ".join(f"[{n}](capturas/{n})" for n in nombres) or "sin captura"
-    celda = lambda texto: str(texto).replace("|", "/").replace("\n", " ")
+    RESULTADOS.write_text(json.dumps(datos, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     lineas = ["# Fase 3: prueba de la interfaz en el navegador", "",
-              f"Fecha: {fecha}. Commit: `{commit}`. URL: {URL}. Navegador: Chromium con Playwright 1.64.1, idioma es-ES.", "",
-              f"Resultado: {aprobados} de {len(R.pasos)} pasos aprobados.", "",
-              "Las credenciales se leen de `app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión y la caja de correo "
-              "se cubren con un recuadro gris; antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave.", "",
-              "Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la aplicación corriendo.", "",
-              "## Pasos", "", "| Paso | Esperado | Observado | Capturas | Tiempo (s) | Estado |", "|---|---|---|---|---|---|"]
-    for p in R.pasos:
-        lineas.append(f"| {p['numero']}. {p['nombre']} | {celda(p['esperado'])} | {celda(p['observado'])} | {enlaces(p['capturas'])} | {p['segundos']} | {p['estado']} |")
-    lineas += ["", "## Revisiones adicionales", "", "| Revisión | Observado | Capturas | Estado |", "|---|---|---|---|"]
-    for r in R.extras:
-        lineas.append(f"| {r['revision']} | {celda(r['observado'])} | {enlaces(r['capturas'])} | {r['estado']} |")
-    (SALIDA / "prueba_interfaz.md").write_text("\n".join(lineas) + "\n", encoding="utf-8")
-    print(f"{aprobados} de {len(R.pasos)} pasos aprobados", flush=True)
+              "Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la aplicación corriendo. Las credenciales se leen de "
+              "`app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión y la caja de correo se cubren con un recuadro gris; "
+              "antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave.", ""]
+    lineas += seccion("Corrida 2 (vigente)", datos, "capturas_v2",
+                      "Después de corregir los cuatro problemas de la corrida 1, el paso 2 del script, el control de cupo y la carpeta de informes. "
+                      "El flujo principal usa un usuario de demostración; A y B se usan para el aislamiento.")
+    if RESULTADOS_ANTERIORES.exists():
+        lineas += seccion("Corrida 1", json.loads(RESULTADOS_ANTERIORES.read_text(encoding="utf-8")), "capturas",
+                          "Se conserva sin cambios. El paso 2 falló por un defecto del script (leía la caja de contraseña después de que Gradio la ocultara), "
+                          "no de la aplicación.")
+    (SALIDA / "prueba_interfaz.md").write_text("\n".join(lineas), encoding="utf-8")
+    print(f"{sum(p['estado'] == 'aprobado' for p in R.pasos)} de {len(R.pasos)} pasos aprobados", flush=True)
 
 
 if __name__ == "__main__":
