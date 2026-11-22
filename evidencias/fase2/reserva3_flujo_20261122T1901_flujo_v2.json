@@ -1,0 +1,364 @@
+{
+  "fase": 2,
+  "flujo": "flujo_v2",
+  "comando": "REGRESION_SALIDA=<carpeta> pytest -m reserva3 app/tests/test_reserva3_flujo.py",
+  "fecha": "2026-11-22T14:01:03.985819-05:00",
+  "commit": "d37f362",
+  "recuperacion": "C_DEMANDA",
+  "modelo": "openai/gpt-oss-20b",
+  "groq_tpm": 8000,
+  "groq_rpm": 30,
+  "resumen": {
+    "total": 6,
+    "aprobadas": 5,
+    "tokens": 3922,
+    "tokens_casos_comparables": 3922,
+    "tokens_corrida_anterior_mismos_casos": 3914
+  },
+  "casos": [
+    {
+      "caso": "reserva3_doc_1001_informal",
+      "entrada": "oye, la factura DOC-1001 ya pasó?",
+      "esperado": "reserva_3",
+      "criterio": "Ruta de estado: consulta MCP de DOC-1001 (encontrado=True) y RESPONDIDA con la frase del programa citando [T1]; sin llamadas al modelo.",
+      "observado": "RESPONDIDA; herramientas: T1 consultar_estado_solicitud decision=None encontrado=True estado=verificado_y_contabilizado citada=True; fuentes: ninguna; respuesta: El documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1].",
+      "ruta": "estado",
+      "codigos": [
+        "DOC-1001"
+      ],
+      "origen_codigos": "entrada",
+      "decision_enrutador": null,
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "operaciones": 1,
+      "llamadas_modelo": 0,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "salidas_rechazadas": [],
+      "frases_generadas": [
+        "El documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1]."
+      ],
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "CONSULTA_MCP",
+          "codigo": "DOC-1001",
+          "etiqueta": "T1",
+          "encontrado": true
+        }
+      ],
+      "tokens": {
+        "entrada": 0,
+        "salida": 0,
+        "razonamiento": 0,
+        "total": 0
+      },
+      "tokens_corrida_anterior": 0,
+      "duracion_ms": 1215.5,
+      "llamadas": [],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    },
+    {
+      "caso": "reserva3_dos_codigos",
+      "entrada": "¿Cómo van DOC-1003 y SOL-1002?",
+      "esperado": "reserva_3",
+      "criterio": "Ruta de estado con dos consultas MCP (DOC-1003 y SOL-1002, ambas encontradas), cada frase con su [T#] y RESPONDIDA.",
+      "observado": "RESPONDIDA; herramientas: T1 consultar_estado_solicitud decision=None encontrado=True estado=rechazado_imagen_borrosa citada=True; T2 consultar_estado_solicitud decision=None encontrado=True estado=requiere_revision_humana citada=True; fuentes: ninguna; respuesta: El documento DOC-1003 figura en el registro registro_sistema_documental_v1 con estado rechazado_imagen_borrosa [T1]. La solicitud SOL-1002 figura en el registro sistema_seguimiento_expedientes con estado requiere_revision_humana; detalle: Intento de modificación de cláusulas fuera del procedimiento [T2].",
+      "ruta": "estado",
+      "codigos": [
+        "DOC-1003",
+        "SOL-1002"
+      ],
+      "origen_codigos": "entrada",
+      "decision_enrutador": null,
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "operaciones": 2,
+      "llamadas_modelo": 0,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "salidas_rechazadas": [],
+      "frases_generadas": [
+        "El documento DOC-1003 figura en el registro registro_sistema_documental_v1 con estado rechazado_imagen_borrosa [T1].",
+        "La solicitud SOL-1002 figura en el registro sistema_seguimiento_expedientes con estado requiere_revision_humana; detalle: Intento de modificación de cláusulas fuera del procedimiento [T2]."
+      ],
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "CONSULTA_MCP",
+          "codigo": "DOC-1003",
+          "etiqueta": "T1",
+          "encontrado": true
+        },
+        {
+          "etapa": "CONSULTA_MCP",
+          "codigo": "SOL-1002",
+          "etiqueta": "T2",
+          "encontrado": true
+        }
+      ],
+      "tokens": {
+        "entrada": 0,
+        "salida": 0,
+        "razonamiento": 0,
+        "total": 0
+      },
+      "tokens_corrida_anterior": 0,
+      "duracion_ms": 3680.8,
+      "llamadas": [],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    },
+    {
+      "caso": "reserva3_sol_0042",
+      "entrada": "Estado de SOL-0042",
+      "esperado": "reserva_3",
+      "criterio": "Ruta de estado: consulta MCP de SOL-0042 con encontrado=False; la respuesta dice que no existe en el registro, cita [T1] y no inventa un estado.",
+      "observado": "RESPONDIDA; herramientas: T1 consultar_estado_solicitud decision=None encontrado=False estado=None citada=True; fuentes: ninguna; respuesta: La solicitud SOL-0042 no existe en el registro sistema_seguimiento_expedientes [T1].",
+      "ruta": "estado",
+      "codigos": [
+        "SOL-0042"
+      ],
+      "origen_codigos": "entrada",
+      "decision_enrutador": null,
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "operaciones": 1,
+      "llamadas_modelo": 0,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "salidas_rechazadas": [],
+      "frases_generadas": [
+        "La solicitud SOL-0042 no existe en el registro sistema_seguimiento_expedientes [T1]."
+      ],
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "CONSULTA_MCP",
+          "codigo": "SOL-0042",
+          "etiqueta": "T1",
+          "encontrado": false
+        }
+      ],
+      "tokens": {
+        "entrada": 0,
+        "salida": 0,
+        "razonamiento": 0,
+        "total": 0
+      },
+      "tokens_corrida_anterior": 0,
+      "duracion_ms": 1738.4,
+      "llamadas": [],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    },
+    {
+      "caso": "reserva3_contrato_arriendo",
+      "entrada": "Contrato de arrendamiento entre Inmobiliaria Ejemplo S.A.S. y Cliente Ficticio. Objeto: arriendo de oficina. Valor mensual: $2.000.000. Vigencia: 12 meses. Firmado por ambas partes.",
+      "esperado": "reserva_3",
+      "criterio": "Ruta de documento: clasificador del corte 1; si decide OK_VALIDADO, RESPONDIDA con la clasificación citando [T1]; si decide OK_PIDE_ACLARACION, ACLARACION; si OK_REQUIERE_HUMANO, RECHAZO.",
+      "observado": "RESPONDIDA; herramientas: T1 clasificar_documento decision=OK_VALIDADO encontrado=None estado=None citada=True; fuentes: ninguna; respuesta: El documento se clasificó como contrato: Contrato de arrendamiento de oficina entre Inmobiliaria Ejemplo S.A.S. y Cliente Ficticio, valor mensual $2.000.000, vigencia 12 meses [T1].",
+      "ruta": "documento",
+      "codigos": [],
+      "origen_codigos": "",
+      "decision_enrutador": null,
+      "estado_final": "RESPONDIDA",
+      "cumple": true,
+      "prueba": "aprobada",
+      "operaciones": 1,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "salidas_rechazadas": [],
+      "frases_generadas": null,
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "CLASIFICACION",
+          "decision": "OK_VALIDADO",
+          "etiqueta": "T1"
+        }
+      ],
+      "tokens": {
+        "entrada": 659,
+        "salida": 174,
+        "razonamiento": 42,
+        "total": 833
+      },
+      "tokens_corrida_anterior": 834,
+      "duracion_ms": 2159.1,
+      "llamadas": [
+        {
+          "etapa": "analisis_documental",
+          "intento_json": 1,
+          "entrada": 659,
+          "salida": 174,
+          "razonamiento": 42,
+          "total": 833,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 804.5,
+          "finish_reason": "stop",
+          "proveedor": null
+        }
+      ],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    },
+    {
+      "caso": "reserva3_registrar_factura",
+      "entrada": "¿Puedo pedirle al analizador que registre una factura por mí?",
+      "esperado": "reserva_3",
+      "criterio": "Ruta RAG: busca en las políticas y responde (RESPONDIDA o PARCIAL) que el analizador solo consulta y no registra, citando [F#] de seguimiento_y_seguridad.",
+      "observado": "ERROR_VALIDACION; herramientas: ninguna; fuentes: ninguna; respuesta: La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "ruta": "rag",
+      "codigos": [],
+      "origen_codigos": "",
+      "decision_enrutador": null,
+      "estado_final": "ERROR_VALIDACION",
+      "cumple": false,
+      "prueba": "fallida",
+      "operaciones": 1,
+      "llamadas_modelo": 2,
+      "reintento_redaccion": {
+        "usado": true,
+        "motivo": "'citas' ['F3'] no coincide con el texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [F1].",
+        "resultado": "rechazado"
+      },
+      "salidas_rechazadas": [
+        {
+          "tipo": "redaccion",
+          "salida": "{\"estado\":\"respondida\",\"respuesta\":\"No, el analizador no registra facturas; solo consulta información. Las peticiones de registro se remiten a revisión humana.\",\"citas\":[\"F3\"],\"limitacion\":\"\"}"
+        },
+        {
+          "tipo": "redaccion_reintento",
+          "salida": "{\"estado\":\"respondida\",\"respuesta\":\"No, el analizador no registra facturas; solo consulta información. Las peticiones de registro se remiten a revisión humana. [F3]\",\"citas\":[\"F3\"],\"limitacion\":\"\"}"
+        }
+      ],
+      "frases_generadas": null,
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [
+        {
+          "etapa": "SALIDA_RECHAZADA",
+          "tipo": "redaccion",
+          "motivo": "'citas' ['F3'] no coincide con el texto []. Escribe cada etiqueta entre corchetes dentro de la respuesta, por ejemplo [F1]."
+        },
+        {
+          "etapa": "SALIDA_RECHAZADA",
+          "tipo": "redaccion_reintento",
+          "motivo": "Cada frase con contenido documental necesita su etiqueta [F#]; sin etiqueta: \"No, el analizador no registra facturas; solo consulta información.\"."
+        }
+      ],
+      "tokens": {
+        "entrada": 2418,
+        "salida": 186,
+        "razonamiento": 66,
+        "total": 2604
+      },
+      "tokens_corrida_anterior": 2604,
+      "duracion_ms": 4099.5,
+      "llamadas": [
+        {
+          "etapa": "respuesta_rag",
+          "intento_json": 1,
+          "entrada": 1129,
+          "salida": 116,
+          "razonamiento": 56,
+          "total": 1245,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 1141.6,
+          "finish_reason": "stop",
+          "proveedor": null
+        },
+        {
+          "etapa": "respuesta_rag",
+          "intento_json": 1,
+          "entrada": 1289,
+          "salida": 70,
+          "razonamiento": 10,
+          "total": 1359,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 487.3,
+          "finish_reason": "stop",
+          "proveedor": null
+        }
+      ],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    },
+    {
+      "caso": "reserva3_saludo",
+      "entrada": "Hola, buenos días, ¿en qué me puedes ayudar?",
+      "esperado": "reserva_3",
+      "criterio": "Ruta libre: una sola llamada al modelo que elige aclarar el alcance; ACLARACION sin herramientas ni etiquetas.",
+      "observado": "ACLARACION; herramientas: ninguna; fuentes: ninguna; respuesta: Hola, soy el Analizador de Documentos. Puedo ayudarte con preguntas sobre políticas de facturación, contratos, documentos de identificación, el estado de documentos DOC-XXXX y solicitudes SOL-XXXX. ¿En qué tema específico necesitas asistencia?",
+      "ruta": "libre",
+      "codigos": [],
+      "origen_codigos": "",
+      "decision_enrutador": "aclarar",
+      "estado_final": "ACLARACION",
+      "cumple": true,
+      "prueba": "aprobada",
+      "operaciones": 0,
+      "llamadas_modelo": 1,
+      "reintento_redaccion": {
+        "usado": false,
+        "motivo": "",
+        "resultado": "no_aplica"
+      },
+      "salidas_rechazadas": [],
+      "frases_generadas": null,
+      "error_tecnico": null,
+      "error_proveedor": null,
+      "eventos": [],
+      "tokens": {
+        "entrada": 403,
+        "salida": 82,
+        "razonamiento": 8,
+        "total": 485
+      },
+      "tokens_corrida_anterior": 476,
+      "duracion_ms": 1580.8,
+      "llamadas": [
+        {
+          "etapa": "enrutador",
+          "intento_json": 1,
+          "entrada": 403,
+          "salida": 82,
+          "razonamiento": 8,
+          "total": 485,
+          "max_completion_tokens": 3000,
+          "espera_cupo_ms": 0.0,
+          "ms": 429.2,
+          "finish_reason": "stop",
+          "proveedor": null
+        }
+      ],
+      "fecha": "2026-11-22T14:01:03.985819-05:00",
+      "commit": "d37f362"
+    }
+  ]
+}

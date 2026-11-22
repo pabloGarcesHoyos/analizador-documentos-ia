@@ -10,3 +10,4 @@ __pycache__/
 app/modelos/
 app/mcp_archivos/
 node_modules/
+app/informes/

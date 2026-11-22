@@ -1,0 +1,279 @@
+{
+  "fecha": "2026-11-22 20:10 UTC",
+  "commit": "baa5372",
+  "url": "http://127.0.0.1:7860",
+  "navegador": "Chromium (Playwright 1.64.1)",
+  "pasos": [
+    {
+      "numero": 1,
+      "nombre": "Login del usuario de demostración con contraseña incorrecta",
+      "esperado": "Aviso claro y caja de contraseña vacía.",
+      "observado": "Aviso: \"No se pudo iniciar sesión: revisa el correo y la contraseña.\". Caja de contraseña vacía: sí.",
+      "capturas": [
+        "01_login_contrasena_incorrecta.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 1.6
+    },
+    {
+      "numero": 2,
+      "nombre": "Login correcto del usuario de demostración",
+      "esperado": "Entra a la aplicación y la contraseña no queda en la caja.",
+      "observado": "Entra a la vista de conversaciones en 2824 ms; la caja ya no está en la página.",
+      "capturas": [
+        "02_login_correcto.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 2.9
+    },
+    {
+      "numero": 3,
+      "nombre": "Consulta de estado de DOC-1001",
+      "esperado": "Frase con [T1], bloque de consultas e indicador Respondida.",
+      "observado": "4150 ms. Indicador: \"Respondida con evidencia de los documentos.\". Respuesta: Respondida con evidencia de los documentos.\n\nEl documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1].\n\nConsultas: [T1]\n\n[T1] Consulta de estado en el registro\n\nCódigo consultado: DOC-1001\nRegistro: registro_sistema_documental_v1\nEncontrado: sí\nEstado: verificado_y_contabilizado\nEmisor: TechCorp S.A.\nFecha proceso: 2026-08-12\nMonto: $1,5",
+      "capturas": [
+        "03_estado_doc_1001.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 4.8
+    },
+    {
+      "numero": 4,
+      "nombre": "Pregunta mixta de requisitos y estado",
+      "esperado": "Fuentes con documento, sección y pasaje, más [T1].",
+      "observado": "7511 ms. Indicador: \"Error de validación: la respuesta generada no superó el control de citas y no se muestra.\". Respuesta: Error de validación: la respuesta generada no superó el control de citas y no se muestra.\n\nLa respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar.",
+      "capturas": [
+        "05_mixta_fuentes_y_consulta.png"
+      ],
+      "estado": "fallido",
+      "segundos": 8.1
+    },
+    {
+      "numero": 5,
+      "nombre": "Seguimiento sin código",
+      "esperado": "Pide el código DOC-XXXX o SOL-XXXX.",
+      "observado": "6459 ms. Indicador: \"Se necesita una aclaración para continuar.\". Respuesta: Se necesita una aclaración para continuar.\n\nPara consultar el estado necesito el código del documento o de la solicitud, con formato DOC-XXXX o SOL-XXXX.",
+      "capturas": [
+        "06_pide_codigo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 7.0
+    },
+    {
+      "numero": 6,
+      "nombre": "Pedido de eliminar un documento",
+      "esperado": "Rechazo: el analizador solo consulta.",
+      "observado": "7980 ms. Indicador: \"Solicitud rechazada: el analizador solo consulta información.\". Respuesta: Solicitud rechazada: el analizador solo consulta información.\n\nNo puedo registrar, aprobar, firmar, modificar, cancelar ni eliminar documentos o solicitudes: el analizador solo consulta información. Esa petición se remite a revisión humana.",
+      "capturas": [
+        "07_rechazo_eliminar.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 8.6
+    },
+    {
+      "numero": 7,
+      "nombre": "Saludo",
+      "esperado": "Se presenta como el Analizador de Documentos, sin términos internos.",
+      "observado": "7735 ms. Indicador: \"Se necesita una aclaración para continuar.\". Respuesta: Se necesita una aclaración para continuar.\n\nHola, soy el Analizador de Documentos. Puedo ayudarte con preguntas sobre políticas de facturación, contratos, documentos de identificación, o el estado de documentos DOC-XXXX y solicitudes SOL-XXXX. ¿En qué puedo asistirte?. Términos internos: ninguno",
+      "capturas": [
+        "08_saludo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 8.3
+    },
+    {
+      "numero": 8,
+      "nombre": "Bloqueo mientras atiende",
+      "esperado": "Entrada, botones y lista desactivados durante la espera.",
+      "observado": "Durante la espera del paso 4: entrada desactivada True, botones desactivados {'Enviar': True, 'Nueva conversación': True, 'Cerrar sesión': True}, lista de conversaciones desactivada True, indicador \"Procesando tu consulta…\".",
+      "capturas": [
+        "04_entrada_bloqueada_mientras_atiende.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 0.0
+    },
+    {
+      "numero": 9,
+      "nombre": "Propuesta de informe y regreso a la conversación",
+      "esperado": "Contenido completo y destino; al volver reaparecen Aprobar y Rechazar.",
+      "observado": "34052 ms. Indicador: \"Conversación cargada. Hay una propuesta de informe que espera tu aprobación.\". Destino informe_5c9f59c3da0a.md; contenido de 1180 caracteres. Panel oculto en otra conversación: False. Al volver reaparecen Aprobar y Rechazar: True; mismo contenido y destino: True.",
+      "capturas": [
+        "10_propuesta_de_informe.png",
+        "11_otra_conversacion_sin_panel.png",
+        "12_propuesta_reaparece_al_volver.png"
+      ],
+      "estado": "fallido",
+      "segundos": 39.9
+    },
+    {
+      "numero": 10,
+      "nombre": "Doble clic en Aprobar",
+      "esperado": "Un solo archivo descargable, igual a lo mostrado; una sola decisión registrada.",
+      "observado": "Enlaces de descarga: 1. Contenido descargado igual al mostrado: True (SHA-256 7a2b3b76eee1). Decisiones registradas en Supabase: [('aprobada', 'ejecutada')].",
+      "capturas": [
+        "13_aprobado_un_solo_archivo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 9.8
+    },
+    {
+      "numero": 11,
+      "nombre": "Otra propuesta y Rechazar",
+      "esperado": "Rechazo registrado y ningún archivo.",
+      "observado": "7448 ms. Panel visible: True. Aviso de rechazo registrado; enlaces de descarga visibles: 0.",
+      "capturas": [
+        "14_propuesta_rechazada.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 10.4
+    },
+    {
+      "numero": 12,
+      "nombre": "Reabrir las conversaciones decididas",
+      "esperado": "Se ve la decisión y no hay botones.",
+      "observado": "Aprobada: nota presente True, sin botones True. Rechazada: nota presente False, sin botones True.",
+      "capturas": [
+        "15_decision_aprobada_al_reabrir.png",
+        "16_decision_rechazada_al_reabrir.png"
+      ],
+      "estado": "fallido",
+      "segundos": 5.2
+    },
+    {
+      "numero": 13,
+      "nombre": "Cambio entre conversaciones y recarga de la página",
+      "esperado": "Pide login y todo se ve idéntico: estado, limitación, fuentes y consultas.",
+      "observado": "Pide login tras recargar: True. Mixta idéntica: False. Estado idéntica: False. La respuesta mixta no incluye limitación.",
+      "capturas": [
+        "17_antes_de_recargar.png",
+        "18_recarga_pide_login.png",
+        "19_mixta_tras_recargar.png"
+      ],
+      "estado": "fallido",
+      "segundos": 11.7
+    },
+    {
+      "numero": 14,
+      "nombre": "B en otro contexto al mismo tiempo que A",
+      "esperado": "B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL.",
+      "observado": "A y B con sesión al mismo tiempo en contextos separados. Conversaciones de A o del usuario de demostración en la lista completa de B: 0 de 171. Por URL con el UUID de una conversación de A: sin acceso True. La interfaz no tiene campo que acepte un UUID. POST /gradio_api/queue/join al evento de selección con ese UUID y sin sesión: HTTP 400, {\"detail\":\"\\\"Value: '0091dfeb-4886-496e-bb9f-f2cb483b99ee' (type: <class 'str'>).",
+      "capturas": [
+        "20_a_en_su_contexto.png",
+        "21_b_sin_conversaciones_de_a.png",
+        "22_b_url_con_uuid_de_a.png"
+      ],
+      "estado": "fallido",
+      "segundos": 5.0
+    },
+    {
+      "numero": 15,
+      "nombre": "Cerrar sesión en todos los contextos",
+      "esperado": "No queda nada visible y Atrás no reutiliza la sesión.",
+      "observado": "demo: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; A: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; B: sin datos visibles tras cerrar True; Atrás llevó a app y muestra el inicio de sesión sin datos True.",
+      "capturas": [
+        "24_cierre_de_sesion_demo.png",
+        "25_atras_tras_cerrar_demo.png",
+        "26_cierre_de_sesion_a.png",
+        "27_atras_tras_cerrar_a.png",
+        "28_cierre_de_sesion_b.png",
+        "29_atras_tras_cerrar_b.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 17.8
+    }
+  ],
+  "revisiones": [
+    {
+      "revision": "Texto visible en inglés",
+      "observado": "Palabras encontradas: ['Error', 'processing'].",
+      "capturas": [],
+      "estado": "fallido"
+    },
+    {
+      "revision": "Etiquetas de accesibilidad y textos emergentes en inglés",
+      "observado": "Palabras encontradas: ['Error'].",
+      "capturas": [],
+      "estado": "fallido"
+    },
+    {
+      "revision": "Términos internos en el texto visible",
+      "observado": "Encontrados: ninguno.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Emojis en el texto visible",
+      "observado": "Encontrados: 0.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Errores en la consola del navegador",
+      "observado": "0 errores y 0 advertencias: []",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Respuestas HTTP 4xx o 5xx",
+      "observado": "0: []",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Contraseñas o tokens en HTML, localStorage, sessionStorage y cookies",
+      "observado": "demostración: nada; A: nada; B: nada.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "API de Gradio cerrada",
+      "observado": "GET /gradio_api/info: HTTP 404, {\"detail\":\"No disponible.\"}. POST /gradio_api/call/entrar: HTTP 404, {\"detail\":\"No disponible.\"}. POST /gradio_api/run/predict: HTTP 404. La cola sin sesión se revisa en el paso 14.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Aviso propio de espera de cupo",
+      "observado": "Observado en: ¿Qué datos debe traer una factura? Haz un informe: 09_aviso_esperando_cupo.png",
+      "capturas": [
+        "09_aviso_esperando_cupo.png"
+      ],
+      "estado": "informativo"
+    },
+    {
+      "revision": "Tiempo de cada respuesta",
+      "observado": "\"¿En qué estado está DOC-1001?\": 4150 ms; \"¿Qué requisitos tiene una factura y en qué estado está DOC-1001?\": 7511 ms; \"¿Cómo va la revisión de mi documento?\": 6459 ms; \"Elimina el documento DOC-1001\": 7980 ms; \"Hola\": 7735 ms; \"¿Qué datos debe traer una factura? Haz un informe\": 34052 ms; \"¿Qué datos debe traer una factura? Haz un informe\": 7448 ms.",
+      "capturas": [],
+      "estado": "informativo"
+    },
+    {
+      "revision": "Lista de 20 conversaciones con Ver más",
+      "observado": "A tiene 164 conversaciones. Al entrar se muestran 20 y Ver más está visible: True. Tras Ver más se muestran 40.",
+      "capturas": [
+        "23_ver_mas_con_muchas_conversaciones.png"
+      ],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Vista escritorio_1366x768",
+      "observado": "Desborde horizontal en login: False; en conversación: False. Panel de conversaciones cerrado al entrar: False. Chat visible sin desplazarse: True.",
+      "capturas": [
+        "30_vista_escritorio_1366x768_login.png",
+        "31_vista_escritorio_1366x768_al_entrar.png",
+        "32_vista_escritorio_1366x768_panel_abierto.png",
+        "33_vista_escritorio_1366x768_conversacion.png"
+      ],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Vista celular_390x844",
+      "observado": "Desborde horizontal en login: False; en conversación: False. Panel de conversaciones cerrado al entrar: True. Chat visible sin desplazarse: True.",
+      "capturas": [
+        "34_vista_celular_390x844_login.png",
+        "35_vista_celular_390x844_al_entrar.png",
+        "36_vista_celular_390x844_panel_abierto.png",
+        "37_vista_celular_390x844_conversacion.png"
+      ],
+      "estado": "aprobado"
+    }
+  ]
+}

@@ -1,0 +1,254 @@
+{
+  "fecha": "2026-11-22 19:37 UTC",
+  "commit": "cbb2117",
+  "url": "http://127.0.0.1:7860",
+  "navegador": "Chromium (Playwright 1.64.1)",
+  "pasos": [
+    {
+      "numero": 1,
+      "nombre": "Login de A con contraseña incorrecta",
+      "esperado": "Aviso claro y caja de contraseña vacía.",
+      "observado": "Aviso: \"No se pudo iniciar sesión: revisa el correo y la contraseña.\". Caja de contraseña vacía: sí.",
+      "capturas": [
+        "01_login_contrasena_incorrecta.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 1.5
+    },
+    {
+      "numero": 2,
+      "nombre": "Login correcto de A",
+      "esperado": "Entra a la aplicación y la contraseña no queda en la caja.",
+      "observado": "Excepción: TimeoutError: Locator.input_value: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[type=password]\")\n",
+      "capturas": [],
+      "estado": "fallido",
+      "segundos": 31.3
+    },
+    {
+      "numero": 3,
+      "nombre": "Consulta de estado de DOC-1001",
+      "esperado": "Frase con [T1], bloque de consultas e indicador Respondida.",
+      "observado": "3568 ms. Indicador: \"Respondida con evidencia de los documentos.\". Respuesta: Respondida con evidencia de los documentos.\n\nEl documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1].\n\nConsultas: [T1]\n\n[T1] Consulta de estado en el registro\n\nCódigo consultado: DOC-1001\nRegistro: registro_sistema_documental_v1\nEncontrado: sí\nEstado: verificado_y_contabilizado\nEmisor: TechCorp S.A.\nFecha proceso: 2026-08-12\nMonto: $1,5",
+      "capturas": [
+        "02_estado_doc_1001.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 4.2
+    },
+    {
+      "numero": 4,
+      "nombre": "Pregunta mixta de requisitos y estado",
+      "esperado": "Fuentes con documento, sección y pasaje, más [T1].",
+      "observado": "8607 ms. Indicador: \"Respondida en parte: revisa la limitación indicada.\". Respuesta: Respondida en parte: revisa la limitación indicada.\n\nEl documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1]. Para contabilizar una factura, el documento debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero. [F2] Si la factura no presenta el NIT del emisor o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana. [F3] El estado de una factura radicada se consulta con su código de seguimiento, con formato DOC seguido de cuatro dígitos, por ejemplo DOC-1001. [F1] Este manual describe requisitos y no contiene el esta",
+      "capturas": [
+        "04_mixta_fuentes_y_consulta.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 9.2
+    },
+    {
+      "numero": 5,
+      "nombre": "Seguimiento sin código",
+      "esperado": "Pide el código DOC-XXXX o SOL-XXXX.",
+      "observado": "3069 ms. Indicador: \"Se necesita una aclaración para continuar.\". Respuesta: Se necesita una aclaración para continuar.\n\nPara consultar el estado necesito el código del documento o de la solicitud, con formato DOC-XXXX o SOL-XXXX.",
+      "capturas": [
+        "05_pide_codigo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 3.7
+    },
+    {
+      "numero": 6,
+      "nombre": "Pedido de eliminar un documento",
+      "esperado": "Rechazo: el analizador solo consulta.",
+      "observado": "3354 ms. Indicador: \"Solicitud rechazada: el analizador solo consulta información.\". Respuesta: Solicitud rechazada: el analizador solo consulta información.\n\nNo puedo registrar, aprobar, firmar, modificar, cancelar ni eliminar documentos o solicitudes: el analizador solo consulta información. Esa petición se remite a revisión humana.",
+      "capturas": [
+        "06_rechazo_eliminar.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 4.0
+    },
+    {
+      "numero": 7,
+      "nombre": "Saludo",
+      "esperado": "Se presenta como el Analizador de Documentos, sin términos internos.",
+      "observado": "3622 ms. Indicador: \"Se necesita una aclaración para continuar.\". Respuesta: Se necesita una aclaración para continuar.\n\nHola, soy el Analizador de Documentos. Puedo ayudarte con preguntas sobre políticas de facturación, contratos, documentos de identificación, o el estado de documentos DOC-XXXX y solicitudes SOL-XXXX. ¿En qué puedo asistirte?. Términos internos: ninguno",
+      "capturas": [
+        "07_saludo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 4.2
+    },
+    {
+      "numero": 8,
+      "nombre": "Bloqueo mientras atiende",
+      "esperado": "Entrada, botones y lista desactivados durante la espera.",
+      "observado": "Durante la espera del paso 4: entrada desactivada True, botones desactivados {'Enviar': True, 'Nueva conversación': True, 'Cerrar sesión': True}, lista de conversaciones desactivada True.",
+      "capturas": [
+        "03_entrada_bloqueada_mientras_atiende.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 0.0
+    },
+    {
+      "numero": 9,
+      "nombre": "Propuesta de informe y regreso a la conversación",
+      "esperado": "Contenido completo y destino; al volver reaparecen Aprobar y Rechazar.",
+      "observado": "47369 ms. Indicador: \"Conversación cargada. Última respuesta: Respondida. Hay una propuesta de informe que espera tu aprobación. Hay una propuesta de informe sin decidir.\". Destino informe_82da1b1f5d05.md; contenido de 1181 caracteres. Panel oculto en otra conversación: True. Al volver reaparecen Aprobar y Rechazar: True; mismo contenido y destino: True.",
+      "capturas": [
+        "08_propuesta_de_informe.png",
+        "09_otra_conversacion_sin_panel.png",
+        "10_propuesta_reaparece_al_volver.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 53.2
+    },
+    {
+      "numero": 10,
+      "nombre": "Doble clic en Aprobar",
+      "esperado": "Un solo archivo descargable, igual a lo mostrado; una sola decisión registrada.",
+      "observado": "Enlaces de descarga: 1. Contenido descargado igual al mostrado: True (SHA-256 f91ac1c84685). Decisiones registradas en Supabase: [('aprobada', 'ejecutada')].",
+      "capturas": [
+        "11_aprobado_un_solo_archivo.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 13.3
+    },
+    {
+      "numero": 11,
+      "nombre": "Otra propuesta y Rechazar",
+      "esperado": "Rechazo registrado y ningún archivo.",
+      "observado": "10477 ms. Panel visible: True. Aviso de rechazo registrado; enlaces de descarga visibles: 0.",
+      "capturas": [
+        "12_propuesta_rechazada.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 14.5
+    },
+    {
+      "numero": 12,
+      "nombre": "Reabrir las conversaciones decididas",
+      "esperado": "Se ve la decisión y no hay botones.",
+      "observado": "Aprobada: nota presente True, sin botones True. Rechazada: nota presente True, sin botones True.",
+      "capturas": [
+        "13_decision_aprobada_al_reabrir.png",
+        "14_decision_rechazada_al_reabrir.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 5.2
+    },
+    {
+      "numero": 13,
+      "nombre": "Cambio entre conversaciones y recarga de la página",
+      "esperado": "Pide login y todo se ve idéntico: estado, limitación, fuentes y consultas.",
+      "observado": "Pide login tras recargar: True. Mixta idéntica: True. Estado idéntica: True. La respuesta mixta incluye limitación.",
+      "capturas": [
+        "15_antes_de_recargar.png",
+        "16_recarga_pide_login.png",
+        "17_mixta_tras_recargar.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 11.2
+    },
+    {
+      "numero": 14,
+      "nombre": "B en otro contexto al mismo tiempo que A",
+      "esperado": "B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL.",
+      "observado": "Conversaciones de A en la lista de B: 0. Por URL con el UUID de A: sin acceso True. La interfaz no tiene campo que acepte un UUID; la lista solo ofrece las de B. POST /gradio_api/queue/join al evento de selección con el UUID de A: HTTP 200; datos devueltos con contenido de A: no.",
+      "capturas": [
+        "18_b_sin_conversaciones_de_a.png",
+        "19_b_url_con_uuid_de_a.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 3.5
+    },
+    {
+      "numero": 15,
+      "nombre": "Cerrar sesión en los dos",
+      "esperado": "No queda nada visible y Atrás no reutiliza la sesión.",
+      "observado": "A: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; B: sin datos visibles tras cerrar True; Atrás llevó a app y muestra el inicio de sesión sin datos True.",
+      "capturas": [
+        "20_cierre_de_sesion_a.png",
+        "21_atras_tras_cerrar_a.png",
+        "22_cierre_de_sesion_b.png",
+        "23_atras_tras_cerrar_b.png"
+      ],
+      "estado": "aprobado",
+      "segundos": 11.4
+    }
+  ],
+  "revisiones": [
+    {
+      "revision": "Texto visible en inglés",
+      "observado": "Palabras encontradas: ['Loading', 'processing', 'queue'].",
+      "capturas": [],
+      "estado": "fallido"
+    },
+    {
+      "revision": "Etiquetas de accesibilidad y textos emergentes en inglés",
+      "observado": "Palabras encontradas: ['Copy', 'Loading', 'conversation', 'message'].",
+      "capturas": [],
+      "estado": "fallido"
+    },
+    {
+      "revision": "Términos internos en el texto visible",
+      "observado": "Encontrados: ninguno.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Emojis en el texto visible",
+      "observado": "Encontrados: 0.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Errores en la consola del navegador",
+      "observado": "0 errores y 0 advertencias: []",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Respuestas HTTP 4xx o 5xx",
+      "observado": "0: []",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Contraseñas o tokens en HTML, localStorage, sessionStorage y cookies",
+      "observado": "A: nada; B: nada.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "API de Gradio cerrada",
+      "observado": "GET /gradio_api/info: HTTP 200, {\"named_endpoints\":{},\"unnamed_endpoints\":{}}. POST /gradio_api/call/entrar: HTTP 500, Internal Server Error.",
+      "capturas": [],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Tiempo de cada respuesta",
+      "observado": "\"¿En qué estado está DOC-1001?\": 3568 ms; \"¿Qué requisitos tiene una factura y en qué estado está DOC-1001?\": 8607 ms; \"¿Cómo va la revisión de mi documento?\": 3069 ms; \"Elimina el documento DOC-1001\": 3354 ms; \"Hola\": 3622 ms; \"¿Qué datos debe traer una factura? Haz un informe\": 47369 ms; \"¿Qué datos debe traer una factura? Haz un informe\": 10477 ms.",
+      "capturas": [],
+      "estado": "informativo"
+    },
+    {
+      "revision": "Vista escritorio_1366x768",
+      "observado": "Desborde horizontal en login: False; en conversación: False.",
+      "capturas": [
+        "24_vista_escritorio_1366x768_login.png",
+        "25_vista_escritorio_1366x768_conversacion.png"
+      ],
+      "estado": "aprobado"
+    },
+    {
+      "revision": "Vista celular_390x844",
+      "observado": "Desborde horizontal en login: False; en conversación: False.",
+      "capturas": [
+        "26_vista_celular_390x844_login.png",
+        "27_vista_celular_390x844_conversacion.png"
+      ],
+      "estado": "aprobado"
+    }
+  ]
+}
