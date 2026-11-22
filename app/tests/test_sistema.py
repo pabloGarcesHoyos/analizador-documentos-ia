@@ -151,15 +151,33 @@ def test_recorrido_completo_cabe_en_tres_decisiones_y_dos_operaciones(configurac
     resultado = atender(armar(configuracion, almacen, llm), "¿Qué requisitos tiene una factura y cómo va DOC-1001?", conversacion)
     assert resultado.estado == "RESPONDIDA" and len(llm.decisiones_pedidas()) == 3
     assert resultado.traza["limites"]["decisiones"] == 3 and resultado.traza["limites"]["operaciones"] == 2
+    assert resultado.traza["limites"]["reintentos_redaccion"] == 1 and not resultado.traza["reintento_redaccion"]["usado"]
+
+
+ESTADO_CON_F = decision("responder", respuesta="El estado de DOC-1001 es verificado y contabilizado [F1].", citas=["F1"], estado="respondida")
+FINAL_COMPLETO = decision("responder", respuesta="Debe incluir el NIT del emisor [F1]. El estado de DOC-1001 es verificado y contabilizado [T1].",
+                          citas=["F1", "T1"], estado="respondida")
 
 
 def test_estado_citado_con_un_pasaje_se_rechaza_y_no_se_corrige(configuracion, almacen, conversacion):
-    malo = decision("responder", respuesta="El estado de DOC-1001 es verificado y contabilizado [F1].", citas=["F1"], estado="respondida")
-    llm = LLMGuionado([BUSCAR, decision("consultar_estado_solicitud", codigo="DOC-1001"), malo])
+    llm = LLMGuionado([BUSCAR, decision("consultar_estado_solicitud", codigo="DOC-1001"), ESTADO_CON_F, ESTADO_CON_F])
     resultado = atender(armar(configuracion, almacen, llm), "¿Qué requisitos hay y cómo va DOC-1001?", conversacion)
-    assert resultado.estado == "LIMITE_DECISIONES"
-    assert "[F1]" not in resultado.respuesta and "T1" not in resultado.respuesta
-    assert any(e["etapa"] == "DECISION_RECHAZADA" and "T1" in e["motivo"] for e in resultado.traza["eventos"])
+    assert resultado.estado == "ERROR_VALIDACION" and resultado.respuesta == si.MENSAJES["ERROR_VALIDACION"]
+    assert resultado.fuentes == [] and resultado.herramientas == []
+    assert resultado.traza["reintento_redaccion"] == {"usado": True, "motivo": resultado.traza["reintento_redaccion"]["motivo"], "resultado": "rechazado"}
+    assert "T1" in resultado.traza["reintento_redaccion"]["motivo"]
+    assert [e["tipo"] for e in resultado.traza["eventos"] if e["etapa"] == "DECISION_RECHAZADA"] == ["redaccion", "redaccion_reintento"]
+
+
+def test_reintento_de_redaccion_no_consume_decisiones(configuracion, almacen, conversacion):
+    llm = LLMGuionado([BUSCAR, decision("consultar_estado_solicitud", codigo="DOC-1001"), ESTADO_CON_F, FINAL_COMPLETO])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Qué requisitos hay y cómo va DOC-1001?", conversacion)
+    assert resultado.estado == "RESPONDIDA" and resultado.respuesta == FINAL_COMPLETO["respuesta"]
+    assert resultado.traza["decisiones"] == 3 and resultado.traza["operaciones"] == 2 and resultado.traza["llamadas_modelo"] == 4
+    assert resultado.traza["reintento_redaccion"]["usado"] and resultado.traza["reintento_redaccion"]["resultado"] == "aceptado"
+    reintento = llm.decisiones_pedidas()[3]["contexto"]
+    assert reintento["limites_restantes"] == {"decisiones": 0, "operaciones": 0, "reintento_redaccion": 1}
+    assert "salida_final_rechazada" in reintento["observaciones_del_turno"][-1]
 
 
 def test_rechazo_informa_la_causa_y_admite_un_solo_reintento(configuracion, almacen, conversacion):
@@ -167,10 +185,32 @@ def test_rechazo_informa_la_causa_y_admite_un_solo_reintento(configuracion, alma
     bueno = decision("responder", respuesta="DOC-1001 está verificado y contabilizado [T1].", citas=["T1"], estado="respondida")
     llm = LLMGuionado([decision("consultar_estado_solicitud", codigo="DOC-1001"), malo, bueno])
     resultado = atender(armar(configuracion, almacen, llm), "¿Cómo va DOC-1001?", conversacion)
-    assert resultado.estado == "RESPONDIDA"
-    assert "decision_rechazada" in llm.decisiones_pedidas()[2]["contexto"]["observaciones_del_turno"][-1]
+    assert resultado.estado == "RESPONDIDA" and resultado.traza["decisiones"] == 2
     otro = LLMGuionado([malo, malo])
-    assert atender(armar(configuracion, almacen, otro), "¿Cómo va DOC-1001?", conversacion).estado == "ERROR_VALIDACION"
+    resultado = atender(armar(configuracion, almacen, otro), "¿Cómo va DOC-1001?", conversacion)
+    assert resultado.estado == "ERROR_VALIDACION" and len(otro.llamadas) == 2
+
+
+def test_reintento_que_no_es_salida_final_es_error_de_validacion(configuracion, almacen, conversacion):
+    malo = decision("responder", respuesta="Sin cita.", estado="respondida")
+    llm = LLMGuionado([BUSCAR, malo, decision("consultar_estado_solicitud", codigo="DOC-1001")])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Requisitos y DOC-1001?", conversacion)
+    assert resultado.estado == "ERROR_VALIDACION" and resultado.traza["reintento_redaccion"]["resultado"] == "rechazado"
+
+
+def test_salida_final_mal_formada_usa_el_reintento_de_redaccion(configuracion, almacen, conversacion):
+    mal_formada = dict(RESPUESTA_F, estado="completa")
+    llm = LLMGuionado([BUSCAR, mal_formada, RESPUESTA_F])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Qué datos debe traer una factura?", conversacion)
+    assert resultado.estado == "RESPONDIDA" and resultado.traza["reintento_redaccion"]["resultado"] == "aceptado"
+
+
+def test_decision_de_ruta_invalida_consume_una_decision(configuracion, almacen, conversacion):
+    llm = LLMGuionado([decision("consultar_estado_solicitud", codigo="DOC-1001"), decision("aclarar", respuesta="¿Cuál es el código?")])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Cómo va mi documento?", conversacion)
+    assert resultado.estado == "ACLARACION" and resultado.traza["decisiones"] == 2
+    assert not resultado.traza["reintento_redaccion"]["usado"]
+    assert [e["tipo"] for e in resultado.traza["eventos"] if e["etapa"] == "DECISION_RECHAZADA"] == ["ruta"]
 
 
 @pytest.mark.parametrize("respuesta, citas", [
@@ -286,11 +326,12 @@ def test_repeticion_sin_avance(configuracion, almacen, conversacion):
     assert atender(armar(configuracion, almacen, llm), "¿Qué datos debe traer una factura?", conversacion).estado == "REPETICION_SIN_AVANCE"
 
 
-def test_limite_de_decisiones(configuracion, almacen, conversacion):
-    malo = decision("responder", respuesta="Sin cita.", estado="respondida")
-    llm = LLMGuionado([BUSCAR, malo, decision("consultar_estado_solicitud", codigo="DOC-1001")])
-    resultado = atender(armar(configuracion, almacen, llm), "¿Requisitos y DOC-1001?", conversacion)
+def test_limite_de_decisiones_solo_por_decisiones_de_ruta(configuracion, almacen, conversacion):
+    ajeno = decision("consultar_estado_solicitud", codigo="SOL-1001")
+    llm = LLMGuionado([BUSCAR, ajeno, dict(ajeno, codigo_solicitud="SOL-1002")])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Requisitos de una factura?", conversacion)
     assert resultado.estado == "LIMITE_DECISIONES" and len(llm.decisiones_pedidas()) == 3
+    assert not resultado.traza["reintento_redaccion"]["usado"]
 
 
 def test_proponer_informe_no_escribe_nada(configuracion, almacen, conversacion):
