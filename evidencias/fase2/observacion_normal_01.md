@@ -11,8 +11,9 @@ Lo esperado del corte 1 (RESPUESTA_DIRECTA, clasificacion OK_VALIDADO) y el prom
 | Inicial | 2026-11-22 | OK_PIDE_ACLARACION | Condiciones de pago, direccion del emisor, direccion del cliente | RESPONDIDA (antes de la regla de coherencia) | `regresion_corte1.json` |
 | 1 | 2026-11-22T17:11 | OK_PIDE_ACLARACION | Condiciones de pago, direccion del emisor, direccion del cliente | ACLARACION | `regresion_corte1_20261122T1711_corrida1.json` |
 | 2 | 2026-11-22T17:21 | OK_PIDE_ACLARACION | Impuestos, numero de factura, fecha de vencimiento | ACLARACION | `regresion_corte1_20261122T1721_corrida2.json` |
+| agente_v2 | 2026-11-22T17:36 | OK_PIDE_ACLARACION | Impuestos, numero de factura, fecha de vencimiento | ACLARACION | `regresion_corte1_20261122T1736_agente_v2.json` |
 
-En las tres corridas de hoy la decision del clasificador fue la misma, OK_PIDE_ACLARACION, distinta de la del corte 2 (RESPUESTA_DIRECTA en la corrida 2 de `rag_v3`). Entre la corrida 1 y la 2 cambio la lista de campos faltantes con el mismo modelo, el mismo prompt y `temperature=0`. Se registra como variacion del modelo: la temperatura cero no garantiza salidas identicas y Groq no expone una semilla.
+En las cuatro corridas de hoy la decision del clasificador fue la misma, OK_PIDE_ACLARACION, distinta de la del corte 2 (RESPUESTA_DIRECTA en la corrida 2 de `rag_v3`). Entre la corrida 1 y la 2 cambio la lista de campos faltantes con el mismo modelo, el mismo prompt y `temperature=0`. Se registra como variacion del modelo: la temperatura cero no garantiza salidas identicas y Groq no expone una semilla.
 
 ## Observacion aparte
 
