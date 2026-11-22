@@ -689,3 +689,65 @@ def test_escritor_real_de_filesystem_mcp(tmp_path):
     assert ruta.read_text(encoding="utf-8") == "# Informe\n\nContenido verificado.\n"
     with pytest.raises(si.ErrorTecnico):
         asyncio.run(escritor.escribir(tmp_path.parent / "fuera.md", "x"))
+
+
+def catalogo_estado(codigo="DOC-9999", registro=None):
+    return {"T1": {"operacion": "consultar_estado_solicitud", "argumentos": {"codigo_solicitud": codigo},
+                   "resultado": {"codigo_solicitud": codigo, "encontrado": registro is not None, "registro": registro,
+                                 "fuente": "registro_sistema_documental_v1", "origen": "prueba"}}}
+
+
+@pytest.mark.parametrize("respuesta, citas", [
+    ("El documento DOC-9999 no existe en el registro. [T1]", ["T1"]),
+    ("[T1] El documento DOC-9999 no existe en el registro.", ["T1"]),
+    ("El documento DOC-9999 no existe en el registro [T1].", ["T1"]),
+    ("El documento DOC-9999 no existe en el registro.\n[T1]", ["T1"]),
+    ("El documento DOC-9999 no existe en el registro. [T1] [T1]", ["T1"]),
+])
+def test_etiqueta_despues_del_punto_al_inicio_o_sola_se_une_a_su_frase(respuesta, citas):
+    assert si.validar_citas(respuesta, citas, catalogo_estado()) == ["T1"]
+
+
+def test_etiqueta_agrupada_despues_del_punto():
+    catalogo = {**catalogo_estado("DOC-1001", {"estado": "verificado_y_contabilizado"}), "F1": {"operacion": "buscar_documentos", "pasaje": {}}}
+    respuesta = "La factura debe incluir el NIT [F1]. DOC-1001 está verificado y contabilizado. [F1, T1]"
+    assert sorted(si.validar_citas(respuesta, ["F1", "T1"], catalogo)) == ["F1", "T1"]
+
+
+def test_frase_de_estado_sin_su_etiqueta_sigue_rechazandose():
+    respuesta = "El documento DOC-9999 no existe en el registro. Consulta otro código [T1]."
+    with pytest.raises(ValueError, match="DOC-9999 debe citar T1"):
+        si.validar_citas(respuesta, ["T1"], catalogo_estado())
+
+
+def test_frases_une_solo_fragmentos_de_etiquetas():
+    assert si.frases("Primera. [F1] Segunda [F2]. Tercera.") == ["Primera.", "[F1] Segunda [F2].", "Tercera."]
+    assert si.frases("[F1]. Texto.") == ["[F1].", "Texto."]
+    assert si.frases("Uno. 【F1】\nDos (F2).") == ["Uno. 【F1】", "Dos (F2)."]
+
+
+def test_salida_rechazada_queda_en_la_traza_filtrada_y_no_se_muestra(configuracion, almacen, conversacion):
+    malo = decision("responder", respuesta="Escribe a soporte@empresa.com con la clave gsk_ABCDEF123456 [F9].", citas=["F9"], estado="respondida")
+    resultado = atender(armar(configuracion, almacen, LLMGuionado([BUSCAR, malo, malo])), "¿Qué datos debe traer una factura?", conversacion)
+    assert resultado.estado == "ERROR_VALIDACION" and resultado.respuesta == si.MENSAJES["ERROR_VALIDACION"]
+    rechazadas = resultado.traza["salidas_rechazadas"]
+    assert [r["tipo"] for r in rechazadas] == ["redaccion", "redaccion_reintento"]
+    texto = json.dumps(rechazadas, ensure_ascii=False)
+    assert "<correo>" in texto and "<clave>" in texto and "soporte@empresa.com" not in texto and "gsk_ABCDEF" not in texto
+    assert all(len(r["salida"]) <= si.MAX_SALIDA_RECHAZADA for r in rechazadas)
+    assert "F9" not in resultado.respuesta
+
+
+def test_salida_mal_formada_rechazada_tambien_queda_en_la_traza(configuracion, almacen, conversacion):
+    incompleta = '{"accion": "responder", "respuesta": "sin el resto de campos"}'
+    resultado = atender(armar(configuracion, almacen, LLMGuionado([incompleta, incompleta])), "Hola", conversacion)
+    assert resultado.estado == "ERROR_VALIDACION"
+    assert [r["salida"] for r in resultado.traza["salidas_rechazadas"]] == [incompleta, incompleta]
+
+
+@pytest.mark.parametrize("respuesta", [
+    "El documento DOC-9999 no existe en el registro. [T1] Debes verificar el código.",
+    "Revisé el registro. [T1] El documento DOC-9999 no existe.",
+])
+def test_etiqueta_que_abre_la_frase_siguiente_tambien_respalda_la_anterior(respuesta):
+    assert si.validar_citas(respuesta, ["T1"], catalogo_estado()) == ["T1"]
