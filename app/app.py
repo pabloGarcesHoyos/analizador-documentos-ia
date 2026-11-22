@@ -103,6 +103,13 @@ ESTADOS = {
     "ERROR_ENTRADA": "La pregunta no es válida: revisa su longitud.",
     "SESION_INVALIDA": "La sesión venció; vuelve a iniciar sesión.",
 }
+ROTULOS_POR_RUTA = {
+    ("RESPONDIDA", "estado"): "Respondida con datos del registro.",
+    ("RESPONDIDA", "mixta"): "Respondida con documentos y datos del registro.",
+    ("PARCIAL", "mixta"): "Respondida en parte con documentos y datos del registro: revisa la limitación indicada.",
+    ("RESPONDIDA", "documento"): "Respondida con la clasificación del documento.",
+    ("ACLARACION", "libre"): "Información.",
+}
 OPERACIONES = {"consultar_estado_solicitud": "Consulta de estado en el registro", "clasificar_documento": "Clasificación del documento"}
 DECISIONES_CLASIFICACION = {"OK_VALIDADO": "documento validado", "OK_PIDE_ACLARACION": "faltan datos o requiere aclaración",
                             "OK_REQUIERE_HUMANO": "requiere revisión humana", "ERROR_FORMATO": "la clasificación no cumplió el formato"}
@@ -113,8 +120,8 @@ AVISO_INICIO = "Escribe una pregunta para empezar una conversación nueva."
 AVISO_VENCIDA = "La sesión venció y no se pudo renovar. Vuelve a iniciar sesión."
 
 
-def texto_estado(estado: str | None) -> str:
-    return ESTADOS.get(estado or "", "Estado desconocido.")
+def texto_estado(estado: str | None, ruta: str | None = None) -> str:
+    return ROTULOS_POR_RUTA.get((estado, ruta)) or ESTADOS.get(estado or "", "Estado desconocido.")
 
 
 def titulo_automatico(texto: str) -> str:
@@ -166,8 +173,9 @@ def bloque_herramientas(herramientas: list[dict]) -> str:
     return "\n\n".join(partes)
 
 
-def mensajes_asistente(estado: str, contenido: str, fuentes: list[dict], herramientas: list[dict], limitacion: str = "", detalle: str = "") -> list[dict]:
-    texto = f"**{texto_estado(estado)}**\n\n{contenido}"
+def mensajes_asistente(estado: str, contenido: str, fuentes: list[dict], herramientas: list[dict], limitacion: str = "", detalle: str = "",
+                       ruta: str | None = None) -> list[dict]:
+    texto = f"**{texto_estado(estado, ruta)}**\n\n{contenido}"
     if limitacion:
         texto += f"\n\nLimitación: {limitacion}"
     if detalle:
@@ -187,13 +195,13 @@ def mensajes_de_fila(fila: dict) -> list[dict]:
         return [{"role": "user", "content": fila.get("contenido", "")}]
     detalle = (fila.get("detalle_error") or "") if fila.get("estado") == "ERROR_TECNICO" else ""
     return mensajes_asistente(fila.get("estado"), fila.get("contenido", ""), fila.get("fuentes") or [], fila.get("herramientas") or [],
-                              fila.get("limitacion") or "", detalle)
+                              fila.get("limitacion") or "", detalle, fila.get("ruta"))
 
 
 def fila_de_resultado(resultado: si.ResultadoAtencion) -> dict:
     return {"rol": "asistente", "contenido": resultado.respuesta, "estado": resultado.estado, "fuentes": resultado.fuentes,
             "herramientas": resultado.herramientas, "limitacion": resultado.limitacion,
-            "detalle_error": resultado.detalle_error}
+            "detalle_error": resultado.detalle_error, "ruta": resultado.traza.get("ruta")}
 
 
 def mensaje_decision(destino: str, accion: dict) -> dict:
@@ -395,7 +403,7 @@ class Interfaz:
         if not chat or chat[-1].get("role") != "user":
             chat.append({"role": "user", "content": texto})
         chat += mensajes_de_fila(fila_de_resultado(resultado))
-        indicador = texto_estado(resultado.estado)
+        indicador = texto_estado(resultado.estado, resultado.traza.get("ruta"))
         if not resultado.persistido:
             indicador += " Este turno no se pudo guardar en el historial."
         salida = {"sesion": sesion, "conversacion": conversacion, "chat": chat, "indicador": indicador,
@@ -486,7 +494,7 @@ def indicador_recarga(ultimo: dict | None, pendiente: bool, decisiones: dict) ->
         return "Conversación cargada, todavía sin mensajes."
     if ultimo.get("estado") == "PROPUESTA_INFORME" and ultimo.get("id") in decisiones:
         return "Conversación cargada. La propuesta de informe ya tiene una decisión registrada."
-    return f"Conversación cargada. Última respuesta: {texto_estado(ultimo.get('estado'))}"
+    return f"Conversación cargada. Última respuesta: {texto_estado(ultimo.get('estado'), ultimo.get('ruta'))}"
 
 
 def _quitar_nota(chat: list[dict], nota: dict) -> list[dict]:

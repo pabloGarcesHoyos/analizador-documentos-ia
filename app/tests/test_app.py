@@ -210,11 +210,11 @@ def test_nueva_conversacion_no_crea_nada_hasta_la_primera_pregunta(entorno):
 def test_respuesta_muestra_fuentes_y_resultados_de_herramientas(entorno):
     salida = responder(entorno, entrar(entorno), MIXTA)
     principal, fuentes, consultas = salida["chat"][1:]
-    assert ap.ESTADOS["RESPONDIDA"] in principal["content"] and "[T1]" in principal["content"] and "[F1]" in principal["content"]
+    assert "Respondida con documentos y datos del registro." in principal["content"] and "[T1]" in principal["content"] and "[F1]" in principal["content"]
     assert fuentes["metadata"]["title"] == "Fuentes: [F1]" and "Documento: politicas_facturacion" in fuentes["content"] and "Sección:" in fuentes["content"]
     assert "> " in fuentes["content"]
     assert consultas["metadata"]["title"] == "Consultas: [T1]" and "Código consultado: DOC-1001" in consultas["content"]
-    assert "Estado: verificado_y_contabilizado" in consultas["content"] and salida["indicador"] == ap.ESTADOS["RESPONDIDA"]
+    assert "Estado: verificado_y_contabilizado" in consultas["content"] and salida["indicador"] == "Respondida con documentos y datos del registro."
 
 
 def test_estados_con_texto_claro_y_distinto():
@@ -507,3 +507,25 @@ def test_validador_exige_sesion(sesion, valida):
     else:
         with pytest.raises(gr.Error):
             ap.exigir_sesion(sesion, "otro")
+
+
+@pytest.mark.parametrize("texto, rotulo", [
+    ("¿En qué estado está DOC-1001?", "Respondida con datos del registro."),
+    (MIXTA, "Respondida con documentos y datos del registro."),
+    ("¿Qué datos debe traer una factura?", "Respondida con evidencia de los documentos."),
+])
+def test_rotulo_segun_la_ruta_igual_en_vivo_y_al_recargar(entorno, texto, rotulo):
+    sesion = entrar(entorno)
+    salida = responder(entorno, sesion, texto)
+    assert salida["indicador"] == rotulo and salida["chat"][1]["content"].startswith(f"**{rotulo}**")
+    recargada = entorno.interfaz.seleccionar(sesion, salida["conversacion"])
+    assert recargada["chat"] == salida["chat"] and recargada["indicador"] == f"Conversación cargada. Última respuesta: {rotulo}"
+
+
+def test_saludo_de_la_ruta_libre_se_rotula_como_informacion(entorno):
+    entorno.llm.colas["enrutador"] = [{"accion": "aclarar", "respuesta": "Hola, soy el Analizador de Documentos.", "consulta": ""}]
+    sesion = entrar(entorno)
+    salida = responder(entorno, sesion, "Hola")
+    assert salida["indicador"] == "Información." and salida["chat"][1]["content"].startswith("**Información.**")
+    assert entorno.interfaz.seleccionar(sesion, salida["conversacion"])["chat"] == salida["chat"]
+    assert ap.texto_estado("ACLARACION", "pide_codigo") == ap.ESTADOS["ACLARACION"] and ap.texto_estado("RESPONDIDA") == ap.ESTADOS["RESPONDIDA"]

@@ -25,7 +25,7 @@ TURNOS_CONTEXTO = 4
 PATRON_HUELLA = re.compile(r"^[0-9a-f]{64}$")
 PATRON_DESTINO = re.compile(r"^informe_[0-9a-f]{12}\.md$")
 PATRON_URL = re.compile(r"^(https://[^\s/]+|http://(127\.0\.0\.1|localhost)(:\d+)?)/?$")
-COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,limitacion,detalle_error,propuesta_informe,creado_en"
+COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,limitacion,detalle_error,propuesta_informe,creado_en,ruta:traza->>ruta"
 COLUMNAS_CONVERSACION = "id,usuario_id,titulo,creada_en"
 CODIGO_UNICO = "23505"
 CODIGOS_ACCESO = {"42501", "23503", "PGRST301", "PGRST302"}
@@ -130,6 +130,14 @@ def _propuesta(valor: Any) -> dict | None:
     return {"contenido": contenido, "huella_contenido": huella, "destino": destino}
 
 
+def _con_ruta(fila: dict) -> dict:
+    traza = fila.pop("traza", None)
+    if fila.get("ruta") is None and isinstance(traza, dict):
+        fila["ruta"] = traza.get("ruta")
+    fila.setdefault("ruta", None)
+    return fila
+
+
 def _lista_json(valor: Any, nombre: str) -> list:
     if valor is None:
         return []
@@ -230,7 +238,7 @@ class Almacenamiento:
             filas = self._ejecutar(consulta.order("id"))
         else:
             filas = self._ejecutar(consulta.order("id", desc=True).limit(ultimos))
-        return sorted(filas, key=lambda f: f["id"])
+        return sorted((_con_ruta(dict(f)) for f in filas), key=lambda f: f["id"])
 
     def cargar_conversacion(self, token: str, conversacion_id: str) -> tuple[list[dict], dict[int, dict]]:
         conversacion_id = _uuid(conversacion_id, "La conversación")
@@ -248,7 +256,7 @@ class Almacenamiento:
                 .eq("conversacion_id", conversacion_id).eq("usuario_id", usuario_id)
             )
             decisiones = {f["mensaje_id"]: f for f in acciones if f.get("usuario_id") == usuario_id}
-        return sorted(({k: v for k, v in f.items() if k != "usuario_id"} for f in mensajes), key=lambda f: f["id"]), decisiones
+        return sorted((_con_ruta({k: v for k, v in f.items() if k != "usuario_id"}) for f in mensajes), key=lambda f: f["id"]), decisiones
 
     def ventana_contexto(self, token: str, conversacion_id: str, turnos: int = TURNOS_CONTEXTO) -> list[dict]:
         if not isinstance(turnos, int) or turnos < 1:
