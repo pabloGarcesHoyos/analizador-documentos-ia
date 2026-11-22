@@ -1,0 +1,84 @@
+{
+  "fase": 1,
+  "comando": "pytest -m integracion",
+  "fecha": "2026-11-22T11:39:34.104668-05:00",
+  "commit": "50dd897",
+  "resumen": {
+    "total": 8,
+    "aprobadas": 8
+  },
+  "pruebas": [
+    {
+      "nombre": "test_cada_usuario_es_quien_dice_su_token",
+      "esperado": "auth.get_user devuelve el id de A con el token de A y el de B con el de B; un token alterado produce SesionInvalida.",
+      "observado": "Los identificadores coincidieron con cada token y el token alterado fue rechazado.",
+      "estado": "aprobada",
+      "segundos": 1.93,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_turno_completo_y_orden",
+      "esperado": "Dos turnos guardados se recuperan en orden pregunta 1, respuesta 1, pregunta 2, respuesta 2, con las fuentes y el estado de cada respuesta.",
+      "observado": "Orden exacto; las fuentes recuperadas son iguales a las guardadas y el segundo turno conserva el estado ACLARAR.",
+      "estado": "aprobada",
+      "segundos": 2.63,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_dos_conversaciones_de_la_misma_persona",
+      "esperado": "A crea dos conversaciones y ambas aparecen en su listado.",
+      "observado": "Las dos conversaciones aparecieron en el listado de A.",
+      "estado": "aprobada",
+      "segundos": 1.22,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_b_no_lee_ni_lista_la_conversacion_de_a",
+      "esperado": "B no ve la conversacion de A en su listado; cargar_mensajes devuelve AccesoDenegado; por la API directa con el UUID obtiene 0 conversaciones y 0 mensajes.",
+      "observado": "Se cumplieron las cuatro comprobaciones.",
+      "estado": "aprobada",
+      "segundos": 2.62,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_b_no_inserta_en_la_conversacion_de_a",
+      "esperado": "guardar_turno de B en la conversacion de A produce AccesoDenegado; por la API directa, insertar con el usuario de B o con el de A falla con 42501 o 23503; la conversacion de A queda sin mensajes.",
+      "observado": "Los dos intentos directos fueron rechazados por Supabase y la conversacion de A quedo vacia.",
+      "estado": "aprobada",
+      "segundos": 2.13,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_decision_de_informe_unica",
+      "esperado": "La aprobacion se registra una vez y repetirla produce AccionYaRegistrada; B no aprueba ni fija el resultado de una accion de A; el resultado se fija una sola vez.",
+      "observado": "Primera aprobacion aceptada y duplicado rechazado; los dos intentos de B rechazados; ejecutada aceptado y el segundo resultado rechazado.",
+      "estado": "aprobada",
+      "segundos": 4.59,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_lector_autorizado_busca_en_el_corpus_y_el_otro_no",
+      "esperado": "A, lector autorizado, obtiene 10 resultados de analizador_buscar_fragmentos_autorizado y ve los 20 fragmentos del corpus 2.0; B obtiene 0.",
+      "observado": "A obtuvo 10 resultados y vio 20 fragmentos; B obtuvo una lista vacia.",
+      "estado": "aprobada",
+      "segundos": 0.84,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    },
+    {
+      "nombre": "test_anonimo_sin_acceso",
+      "esperado": "Sin sesion, las cinco tablas responden con error de permisos o con 0 filas.",
+      "observado": "Ninguna tabla devolvio filas al cliente anonimo.",
+      "estado": "aprobada",
+      "segundos": 0.78,
+      "fecha": "2026-11-22T11:39:34.104668-05:00",
+      "commit": "50dd897"
+    }
+  ]
+}
