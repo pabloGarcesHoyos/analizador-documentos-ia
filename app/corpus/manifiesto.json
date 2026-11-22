@@ -1,0 +1,26 @@
+{
+  "politicas_facturacion.md": {
+    "version": "2.0-2026-10",
+    "autoridad": "Equipo Analizador de Documentos (corpus ficticio)",
+    "permiso": "autorizado para la práctica y el repositorio",
+    "datos_personales": false
+  },
+  "gestion_contratos.md": {
+    "version": "2.0-2026-10",
+    "autoridad": "Equipo Analizador de Documentos (corpus ficticio)",
+    "permiso": "autorizado para la práctica y el repositorio",
+    "datos_personales": false
+  },
+  "documentos_identificacion.md": {
+    "version": "2.0-2026-10",
+    "autoridad": "Equipo Analizador de Documentos (corpus ficticio)",
+    "permiso": "autorizado para la práctica y el repositorio",
+    "datos_personales": false
+  },
+  "seguimiento_y_seguridad.md": {
+    "version": "2.0-2026-10",
+    "autoridad": "Equipo Analizador de Documentos (corpus ficticio)",
+    "permiso": "autorizado para la práctica y el repositorio",
+    "datos_personales": false
+  }
+}
