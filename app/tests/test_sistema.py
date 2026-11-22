@@ -282,6 +282,13 @@ def test_aclaracion_y_sin_evidencia_no_exigen_etiqueta_por_frase(configuracion, 
     assert resultado.estado == "SIN_EVIDENCIA" and not resultado.traza["reintento_redaccion"]["usado"]
 
 
+def test_prompt_de_la_ruta_libre_sin_terminos_internos():
+    presentacion = si.PROMPT_ENRUTADOR.split(".")[0]
+    assert presentacion == "Eres el Analizador de Documentos"
+    assert "Eres el enrutador" not in si.PROMPT_ENRUTADOR and "ruta automática" not in si.PROMPT_ENRUTADOR
+    assert "no menciones cómo funcionas por dentro" in si.PROMPT_ENRUTADOR
+
+
 def test_reintento_rag_informa_la_causa_como_en_el_corte2(configuracion, almacen, conversacion):
     llm = LLMGuionado(rag=[rag(citas=("F1", "F2")), rag()])
     atender(armar(configuracion, almacen, llm), "¿Qué datos debe traer una factura?", conversacion)
@@ -504,7 +511,7 @@ def test_conversacion_ajena_o_sesion_invalida(configuracion, almacen, conversaci
 def test_traza_suma_los_tokens_y_registra_versiones(configuracion, almacen, conversacion):
     resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[rag(citas=("F1", "F2")), rag()])), "¿Qué datos debe traer una factura?", conversacion)
     assert resultado.traza["tokens"] == {"entrada": 200, "salida": 40, "razonamiento": 10, "total": 240}
-    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v2", "rag_v4", "enrutador_v1")
+    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v2", "rag_v4", "enrutador_v2")
 
 
 @pytest.mark.parametrize("resultado_mcp, esperado", [
