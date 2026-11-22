@@ -597,6 +597,15 @@ def test_observaciones_compactas_sin_metadatos_repetidos(configuracion, almacen,
     observaciones = llm.decisiones_pedidas()[2]["contexto"]["observaciones"]
     assert set(observaciones[0]["pasajes"][0]) == {"etiqueta", "texto"}
     assert set(observaciones[1]["resultado"]) == {"codigo_solicitud", "encontrado", "registro", "fuente"}
+    assert observaciones[1]["argumentos"] == {"codigo_solicitud": "DOC-1001"}
+
+
+def test_prompt_agente_v2_con_sus_reglas_y_version_en_la_traza(configuracion, almacen, conversacion):
+    for regla in ("no la repitas: responde con él", "Sin operaciones no hay etiquetas", "aclara el alcance",
+                  "no combines la condición de un pasaje con la consecuencia de otro", "nunca con [F#]"):
+        assert regla in si.PROMPT_AGENTE
+    resultado = atender(armar(configuracion, almacen, LLMGuionado([decision("aclarar", respuesta="¿Sobre qué trámite?")])), "Hola", conversacion)
+    assert resultado.traza["prompt_agente"] == "agente_v2"
 
 
 def test_mcp_caido_es_error_tecnico_y_no_no_encontrado(configuracion, almacen, conversacion):
