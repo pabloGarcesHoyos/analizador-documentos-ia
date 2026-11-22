@@ -112,6 +112,8 @@ cd app
 cd ..
 ```
 
+Si el Python 3.13 de tu equipo tiene otro nombre (por ejemplo `python3` o `py -3.13` en Windows), úsalo en lugar de `python3.13`; compruébalo antes con `--version`.
+
 `descargar_modelos.py` imprime `modelos verificados` cuando todos los archivos tienen la huella esperada. `npm ci` instala el Filesystem MCP con la versión del lock.
 
 Antes de ejecutar, completa `app/.env` (sección siguiente) y prepara Supabase (secciones "Preparación del corpus" y "Usuarios e historiales").
