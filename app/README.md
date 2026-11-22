@@ -137,6 +137,7 @@ Antes de ejecutar, completa `app/.env` (sección siguiente) y prepara Supabase (
 | `PORT` | Puerto HTTP. Por defecto 7860; en Render lo asigna el servicio. | No. |
 | `MALLOC_ARENA_MAX` | Recomendado `2` para bajar la memoria en Linux. | No. |
 | `OMP_NUM_THREADS` | Recomendado `1`. | No. |
+| `MCP_FALLO_FORZADO` | Solo para pruebas: con `1`, el servidor de estado falla a propósito para comprobar el error técnico. En producción no se define. | No. |
 
 Si falta una variable obligatoria, la app no arranca y dice cuál falta, sin mostrar valores. No hay lista de contraseñas en `.env`: cada persona inicia sesión con su cuenta. Las pruebas de integración usan `app/.env.pruebas` con `PRUEBA_A_EMAIL`, `PRUEBA_A_PASSWORD`, `PRUEBA_B_EMAIL`, `PRUEBA_B_PASSWORD`, `PRUEBA_DEMO_EMAIL` y `PRUEBA_DEMO_PASSWORD`.
 
@@ -152,7 +153,14 @@ Fragmentación por párrafos dentro de cada sección, con el encabezado "Título
 
 - Embeddings: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, revisión `e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, 384 dimensiones, mean pooling y vector normalizado, similitud coseno.
 - Reordenamiento: `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, revisión `1427fd652930e4ba29e8149678df786c240d8825`, con un máximo de 256 tokens por par.
-- Ambos se ejecutan con ONNX Runtime con las exportaciones oficiales qint8 de cada repositorio (`onnx/model_qint8_arm64.onnx`), sin PyTorch. Con la configuración final se obtienen las mismas métricas agregadas del corte 2. En 42 de 51 selecciones el orden es idéntico; en las 9 restantes cambia la posición. El coseno mínimo frente a PyTorch es 0,967.
+- Ambos se ejecutan con ONNX Runtime con las exportaciones oficiales qint8 de cada repositorio, sin PyTorch. La app descarga `onnx/model_qint8_arm64.onnx`, pero no es un modelo exclusivo de ARM: cada repositorio publica el mismo archivo qint8 con tres nombres (`model_qint8_arm64.onnx`, `model_qint8_avx512.onnx` y `model_qint8_avx512_vnni.onnx`). Los tres tienen la misma huella SHA-256 y el mismo tamaño en la revisión fijada (API de archivos de Hugging Face), y `descargar_modelos.py` verifica esa huella al descargar:
+
+  | Modelo | Huella SHA-256 de los tres nombres | Tamaño |
+  |---|---|---|
+  | Embeddings | `783fea82d71a58179b830a4dbd2d58447e640609e98eedf9ffa12622d375a672` | 118.412.398 bytes |
+  | Reordenamiento | `1825907d6c1a9001ff78124780bbde20a614a8c3df3b63409cf3c72c6fe5c8b4` | 118.620.017 bytes |
+
+  Por eso en Render, que es x86, corre el mismo archivo que en local. ONNX Runtime elige los kernels int8 según la CPU, así que los puntajes pueden variar un poco entre máquinas. Con la configuración final se obtienen las mismas métricas agregadas del corte 2. En 42 de 51 selecciones el orden es idéntico; en las 9 restantes cambia la posición. El coseno mínimo frente a PyTorch es 0,967.
 
 ### Recuperación elegida
 
@@ -172,7 +180,7 @@ Memoria en un contenedor de 512 MB, emulado en local:
 |---|---|---|---|---|
 | C con ambos modelos cargados | No: muere al cargar el reranker | más de 512 MB | | |
 | C bajo demanda (`C_DEMANDA`) | Sí | 497 MB | 362 MB | 1,8 a 2,2 s |
-| B (embeddings cargados, reranker bajo demanda) | Sí | 460 MB | 446 MB | 28 a 62 ms |
+| B (embeddings cargados, BM25 y RRF, sin reordenamiento) | Sí | 460 MB | 446 MB | 28 a 62 ms |
 
 `C_DEMANDA` carga cada modelo solo durante la consulta y lo libera al terminar. Así conserva la recuperación del corte 2 dentro de 512 MB. En Render Free corre sin reinicios por memoria hasta ahora (Events del servicio). Render Free no muestra la memoria, así que la app escribe en los logs, después de cada turno, una línea `turno ruta=… ms=… rss_mb=… pico_mb=… hijos_mb=… pico_hijos_mb=…`. Si el servicio muere por memoria, se cambia `RECUPERACION` a `B`.
 
@@ -300,7 +308,7 @@ Comandos, desde la raíz:
 | Entrada incompleta | "¿Cómo va la revisión de mi documento?" | pide_codigo | Pide el código, sin consultar | [fase3](../evidencias/fase3/prueba_interfaz.md) | Aprobado |
 | Herramienta autorizada | "¿En qué estado está DOC-1001?" | estado | Frase del registro con `[T1]`, sin llamar al modelo | [fase3](../evidencias/fase3/prueba_interfaz.md) | Aprobado |
 | Acción prohibida | "Elimina el documento DOC-1001" | rechazo | Rechazo y remisión a revisión humana | [fase3](../evidencias/fase3/prueba_interfaz.md) | Aprobado |
-| Error técnico | Pregunta de políticas con una clave de Groq inválida | rag | "Error técnico… No significa que falte información" | [fase4](../evidencias/fase4/pruebas_url_publica.md) | Aprobado |
+| Error técnico | Pregunta de políticas con una clave de Groq inválida, probada en local (no en la URL pública) | rag | "Error técnico… No significa que falte información" | [fase4](../evidencias/fase4/pruebas_url_publica.md) | Aprobado |
 | Informe con aprobación | "¿Qué datos debe traer una factura? Haz un informe" | rag | Doble clic en Aprobar deja un solo archivo, igual al mostrado; rechazar no escribe | [fase3](../evidencias/fase3/prueba_interfaz.md) | Aprobado |
 | Dos usuarios | A y B al mismo tiempo | | B no ve ninguna conversación de A, ni por la lista ni por el UUID | [fase4](../evidencias/fase4/pruebas_url_publica.md) | Aprobado |
 | Dos conversaciones de una persona | Cambio entre conversaciones del demo | | Cada una muestra su contenido | [fase3](../evidencias/fase3/prueba_interfaz.md) | Aprobado |
