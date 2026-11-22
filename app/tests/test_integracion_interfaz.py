@@ -70,7 +70,7 @@ def test_renovacion_real_del_token(entorno, interfaz):
 
 @pytest.mark.parametrize("texto, salida_rag", [
     ("¿Qué requisitos tiene una factura y en qué estado está DOC-1001?", rag()),
-    ("¿Qué datos debe traer una factura?", rag(respuesta="Debe incluir el NIT [F1].", estado="parcial", limitacion="Los pasajes no tratan el total.")),
+    ("¿Qué datos debe traer una factura?", rag(("Debe incluir el NIT.", ("F1",)), estado="parcial", limitacion="Los pasajes no tratan el total.")),
     ("¿Cómo van DOC-1003, SOL-1002 y SOL-1001?", None),
 ])
 def test_conversacion_recargada_se_ve_igual_que_en_vivo(entorno, interfaz, tmp_path, texto, salida_rag):

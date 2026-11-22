@@ -343,7 +343,7 @@ def test_conversacion_recargada_identica_con_fuentes_y_consultas(entorno):
 
 
 def test_conversacion_recargada_identica_con_limitacion(entorno):
-    entorno.llm.colas["respuesta_rag"] = [rag(respuesta="Debe incluir el NIT [F1].", estado="parcial", limitacion="Los pasajes no tratan el total.")]
+    entorno.llm.colas["respuesta_rag"] = [rag(("Debe incluir el NIT.", ("F1",)), estado="parcial", limitacion="Los pasajes no tratan el total.")]
     chat = comparar_en_vivo_y_recargada(entorno, entrar(entorno), "¿Qué datos debe traer una factura?")
     assert "Limitación: Los pasajes no tratan el total." in chat[1]["content"] and ap.ESTADOS["PARCIAL"] in chat[1]["content"]
 
