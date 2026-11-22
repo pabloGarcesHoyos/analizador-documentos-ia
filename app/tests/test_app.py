@@ -360,3 +360,11 @@ def test_detalle_solo_se_muestra_en_errores_tecnicos():
     fila = {"rol": "asistente", "contenido": "texto", "estado": "RESPONDIDA", "detalle_error": "interno", "limitacion": ""}
     assert "Detalle" not in ap.mensajes_de_fila(fila)[0]["content"]
     assert "Detalle: interno" in ap.mensajes_de_fila({**fila, "estado": "ERROR_TECNICO"})[0]["content"]
+
+
+def test_datos_del_registro_en_orden_fijo_sin_importar_el_orden_guardado():
+    base = {"etiqueta": "T1", "operacion": "consultar_estado_solicitud", "citada": True}
+    uno = {**base, "resultado": {"codigo_solicitud": "DOC-1001", "fuente": "r", "encontrado": True, "registro": {"tipo": "factura", "monto": "1", "estado": "x"}}}
+    dos = {**base, "resultado": {"codigo_solicitud": "DOC-1001", "fuente": "r", "encontrado": True, "registro": {"monto": "1", "estado": "x", "tipo": "factura"}}}
+    assert ap.bloque_herramientas([uno]) == ap.bloque_herramientas([dos])
+    assert ap.bloque_herramientas([uno]).index("Estado: x") < ap.bloque_herramientas([uno]).index("Monto: 1")

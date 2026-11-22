@@ -37,6 +37,7 @@ ESTADOS = {
 OPERACIONES = {"consultar_estado_solicitud": "Consulta de estado en el registro", "clasificar_documento": "Clasificación del documento"}
 DECISIONES_CLASIFICACION = {"OK_VALIDADO": "documento validado", "OK_PIDE_ACLARACION": "faltan datos o requiere aclaración",
                             "OK_REQUIERE_HUMANO": "requiere revisión humana", "ERROR_FORMATO": "la clasificación no cumplió el formato"}
+CAMPOS_PRIMERO = ("estado", "detalle")
 AVISO_INICIO = "Escribe una pregunta para empezar una conversación nueva."
 AVISO_VENCIDA = "La sesión venció y no se pudo renovar. Vuelve a iniciar sesión."
 
@@ -69,6 +70,10 @@ def bloque_fuentes(fuentes: list[dict]) -> str:
     return "\n\n".join(partes)
 
 
+def orden_campo(clave: str) -> tuple[int, str]:
+    return (CAMPOS_PRIMERO.index(clave) if clave in CAMPOS_PRIMERO else len(CAMPOS_PRIMERO), clave)
+
+
 def bloque_herramientas(herramientas: list[dict]) -> str:
     partes = []
     for herramienta in herramientas:
@@ -78,7 +83,8 @@ def bloque_herramientas(herramientas: list[dict]) -> str:
         if herramienta.get("operacion") == "consultar_estado_solicitud":
             lineas = [f"Código consultado: {resultado.get('codigo_solicitud')}", f"Registro: {resultado.get('fuente')}",
                       f"Encontrado: {_valor(bool(resultado.get('encontrado')))}"]
-            lineas += [f"{clave.replace('_', ' ').capitalize()}: {_valor(valor)}" for clave, valor in (resultado.get("registro") or {}).items()]
+            registro = resultado.get("registro") or {}
+            lineas += [f"{clave.replace('_', ' ').capitalize()}: {_valor(registro[clave])}" for clave in sorted(registro, key=orden_campo)]
         else:
             clasificacion = resultado.get("clasificacion") or {}
             lineas = [f"Resultado: {DECISIONES_CLASIFICACION.get(resultado.get('decision'), resultado.get('decision'))}"]
