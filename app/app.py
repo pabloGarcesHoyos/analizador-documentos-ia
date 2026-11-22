@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -279,14 +280,15 @@ class Interfaz:
                     "aviso_informe": "No se pudo escribir el informe por un error técnico. Quedó registrado como fallido y no se reintenta."}
         except al.ErrorAlmacenamiento:
             return {"sesion": sesion, "propuesta": None, "aviso_informe": "No se pudo confirmar el resultado del informe por un error técnico."}
-        ruta = Path(escrito["ruta"])
         try:
-            verificado = hashlib.sha256(ruta.read_bytes()).hexdigest() == propuesta["huella"]
+            datos = Path(escrito["ruta"]).read_bytes()
         except OSError:
-            verificado = False
-        if not verificado:
+            datos = b""
+        if hashlib.sha256(datos).hexdigest() != propuesta["huella"]:
             return {"sesion": sesion, "propuesta": None, "aviso_informe": "El archivo escrito no coincide con el aprobado; no se ofrece para descargar."}
-        return {"sesion": sesion, "propuesta": None, "archivo": gr.update(visible=True, value=str(ruta)),
+        descarga = Path(tempfile.mkdtemp(prefix="informe_")) / propuesta["destino"]
+        descarga.write_bytes(datos)
+        return {"sesion": sesion, "propuesta": None, "archivo": gr.update(visible=True, value=str(descarga)),
                 "aviso_informe": "Informe aprobado, escrito y verificado. Descárgalo ahora: el servidor no guarda los informes de forma permanente."}
 
 

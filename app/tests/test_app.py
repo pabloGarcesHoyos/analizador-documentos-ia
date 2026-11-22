@@ -250,6 +250,8 @@ def test_aprobar_registra_escribe_verifica_y_ofrece_descarga(entorno):
     ruta = Path(salida["archivo"]["value"])
     assert salida["archivo"]["visible"] and salida["propuesta"] is None and "no guarda los informes" in salida["aviso_informe"]
     assert hashlib.sha256(ruta.read_bytes()).hexdigest() == propuesta["huella"] and ruta.name == propuesta["destino"]
+    escrita = entorno.escritor.escrituras[0]
+    assert escrita != ruta and escrita.read_bytes() == ruta.read_bytes() and Path(ap.tempfile.gettempdir()).resolve() in ruta.resolve().parents
     acciones = entorno.base.tablas["acciones_informe"]
     assert [(a["decision"], a["resultado"]) for a in acciones] == [("aprobada", "ejecutada")]
 
