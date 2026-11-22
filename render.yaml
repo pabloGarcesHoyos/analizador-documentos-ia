@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: analizador-documentos
+    runtime: python
+    plan: free
+    rootDir: app
+    buildCommand: pip install -r requirements.txt && python descargar_modelos.py && npm ci --prefix mcp_archivos --omit=dev
+    startCommand: python app.py
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.18
+      - key: GRADIO_SERVER_NAME
+        value: 0.0.0.0
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_TPM
+        value: "8000"
+      - key: GROQ_RPM
+        value: "30"
+      - key: RECUPERACION
+        value: C_DEMANDA
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORPUS_ID
+        sync: false
+      - key: CORPUS_PROPIETARIO_ID
+        sync: false
