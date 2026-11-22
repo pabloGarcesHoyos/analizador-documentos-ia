@@ -237,3 +237,17 @@ def test_limites_de_listado_y_ventana(almacen):
         almacen.listar_conversaciones("token-a", limite=0)
     with pytest.raises(al.DatosInvalidos):
         almacen.ventana_contexto("token-a", str(uuid.uuid4()), turnos=0)
+
+
+def test_obtener_accion_solo_del_propietario(almacen):
+    conversacion = almacen.crear_conversacion("token-a", "Accion")
+    _, respuesta = turno(almacen, "token-a", conversacion["id"])
+    accion = almacen.registrar_decision_informe("token-a", conversacion["id"], respuesta["id"], "aprobada", "informe.md", HUELLA)
+    leida = almacen.obtener_accion_informe("token-a", accion["id"])
+    assert leida["decision"] == "aprobada" and leida["huella_contenido"] == HUELLA and leida["mensaje_id"] == respuesta["id"]
+    with pytest.raises(al.AccesoDenegado):
+        almacen.obtener_accion_informe("token-b", accion["id"])
+    with pytest.raises(al.AccesoDenegado):
+        almacen.obtener_accion_informe("token-a", str(uuid.uuid4()))
+    with pytest.raises(al.DatosInvalidos):
+        almacen.obtener_accion_informe("token-a", "no-es-uuid")
