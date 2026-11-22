@@ -1,0 +1,43 @@
+{
+  "etapa": "antes",
+  "url": "https://analizador-documentos-v871.onrender.com",
+  "fecha": "2026-11-22T22:42:53.757504+00:00",
+  "pasos": [
+    {
+      "numero": "1",
+      "nombre": "Pregunta del dominio sin evidencia en el corpus",
+      "entrada": "¿Cuál es el plazo para pagar una factura después de contabilizarla?",
+      "esperado": "El corpus 2.0 no trata plazos de pago. Esperado: estado sin evidencia, o parcial con una limitación que diga que los documentos no indican el plazo de pago; ninguna frase afirma un plazo de pago; si menciona los 90 días, es como regla de radicación y con su cita.",
+      "observado": "24061 ms. Indicador: \"Sin evidencia: los documentos disponibles no responden esta pregunta.\". Afirma un plazo de pago: False. Respuesta: ¿Cuál es el plazo para pagar una factura después de contabilizarla?\n\nSin evidencia: los documentos disponibles no responden esta pregunta.\n\nLos documentos disponibles no indican el plazo para pagar una factura después de contabilizarla.",
+      "capturas": [
+        "01_sin_evidencia.png"
+      ],
+      "estado": "aprobado"
+    },
+    {
+      "numero": "2a",
+      "nombre": "Conversaciones creadas antes del reinicio",
+      "entrada": "¿En qué estado está DOC-1001? / ¿Qué requisitos tiene una factura y en qué estado está DOC-1001?",
+      "esperado": "Dos conversaciones guardadas: estado con [T1] y mixta con [F#] y [T1].",
+      "observado": "Estado con [T1]: True. Mixta con fuentes y consulta: True.",
+      "capturas": [
+        "02a_estado_antes_del_reinicio.png",
+        "02a_mixta_antes_del_reinicio.png"
+      ],
+      "estado": "aprobado"
+    },
+    {
+      "numero": "3",
+      "nombre": "Aislamiento en la URL pública",
+      "entrada": "A y B con sesión al mismo tiempo; B intenta abrir una conversación de A por la lista, por la URL y por una llamada directa a la cola",
+      "esperado": "B no ve ninguna conversación de A ni del demo; la URL con el UUID no la abre; la llamada directa termina en 4xx sin datos.",
+      "observado": "Conversaciones ajenas en la lista completa de B: 0 de 218. Por URL: sin acceso True. Llamada directa: HTTP 400, sin datos True.",
+      "capturas": [
+        "03_a_en_su_contexto.png",
+        "03_b_sin_conversaciones_de_a.png",
+        "03_b_url_con_uuid_de_a.png"
+      ],
+      "estado": "aprobado"
+    }
+  ]
+}

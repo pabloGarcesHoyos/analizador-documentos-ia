@@ -1,0 +1,18 @@
+{
+  "etapa": "falla",
+  "url": "http://127.0.0.1:7861",
+  "fecha": "2026-11-22T22:43:24.512245+00:00",
+  "pasos": [
+    {
+      "numero": "4",
+      "nombre": "Falla técnica controlada (local, GROQ_API_KEY inválida solo en el entorno del proceso)",
+      "entrada": "¿Qué datos debe traer una factura para contabilizarla?",
+      "esperado": "Se muestra como error técnico, con la aclaración de que no significa falta de información; distinto de sin evidencia.",
+      "observado": "6348 ms. Indicador: \"Error técnico: no se pudo completar la solicitud. No significa que falte información; intenta de nuevo.\". Respuesta: ¿Qué datos debe traer una factura para contabilizarla?\n\nError técnico: no se pudo completar la solicitud. No significa que falte información; intenta de nuevo.\n\nNo se pudo completar la solicitud por un error técnico. Esto no significa que la información no exista; intenta de nuevo en unos minutos.\n\nDetalle: El proveedor del modelo rechazó la solicitud.",
+      "capturas": [
+        "04_error_tecnico_con_clave_invalida.png"
+      ],
+      "estado": "aprobado"
+    }
+  ]
+}

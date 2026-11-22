@@ -1,0 +1,19 @@
+{
+  "etapa": "despues",
+  "url": "https://analizador-documentos-v871.onrender.com",
+  "fecha": "2026-11-22T22:50:24.569134+00:00",
+  "pasos": [
+    {
+      "numero": "2c",
+      "nombre": "Conversaciones tras reiniciar el servicio en Render",
+      "entrada": "Volver a entrar con demo y abrir las dos conversaciones",
+      "esperado": "Las dos conversaciones se ven idénticas a antes del reinicio.",
+      "observado": "Estado idéntica: True. Mixta idéntica: True.",
+      "capturas": [
+        "02c_estado_despues_del_reinicio.png",
+        "02c_mixta_despues_del_reinicio.png"
+      ],
+      "estado": "aprobado"
+    }
+  ]
+}

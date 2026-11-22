@@ -1,0 +1,10 @@
+{
+  "estado": {
+    "id": "70c7f87c-d3d1-44f7-b5c3-d12716cf67eb",
+    "chat": "¿En qué estado está DOC-1001?\n\nRespondida con datos del registro.\n\nEl documento DOC-1001 figura en el registro documental con estado verificado_y_contabilizado [T1].\n\nConsultas: [T1]\n\n[T1] Consulta de estado en el registro\n\nCódigo consultado: DOC-1001\nRegistro: registro_sistema_documental_v1\nEncontrado: sí\nEstado: verificado_y_contabilizado\nEmisor: TechCorp S.A.\nFecha proceso: 2026-08-12\nMonto: $1,500.00 USD\nTipo: factura"
+  },
+  "mixta": {
+    "id": "52d8161e-800a-4a1c-8c4d-d1feb039ef92",
+    "chat": "¿Qué requisitos tiene una factura y en qué estado está DOC-1001?\n\nRespondida con documentos y datos del registro.\n\nEl documento DOC-1001 figura en el registro documental con estado verificado_y_contabilizado [T1]. Para contabilizar una factura, el documento debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero [F1]. Si la factura no presenta el NIT del emisor o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana [F2].\n\nFuentes: [F1] [F2]\n\n[F1] Documento: politicas_facturacion.md. Sección: Requisitos de contabilización. Versión: 2.0-2026-10.\n\nManual de políticas de facturación / Requisitos de contabilización\nPara contabilizar una factura, el documento debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero.\n\n[F2] Documento: politicas_facturacion.md. Sección: Requisitos de contabilización. Versión: 2.0-2026-10.\n\nManual de políticas de facturación / Requisitos de contabilización\nSi la factura no presenta el NIT del emisor o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana.\n\nConsultas: [T1]\n\n[T1] Consulta de estado en el registro\n\nCódigo consultado: DOC-1001\nRegistro: registro_sistema_documental_v1\nEncontrado: sí\nEstado: verificado_y_contabilizado\nEmisor: TechCorp S.A.\nFecha proceso: 2026-08-12\nMonto: $1,500.00 USD\nTipo: factura"
+  }
+}
