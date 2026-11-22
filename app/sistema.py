@@ -39,6 +39,7 @@ SALIDA_DESCONOCIDA = 800
 GROQ_TPM, GROQ_RPM, FRACCION_CUPO, VENTANA_CUPO, TIEMPO_MINIMO_LLAMADA = 8000, 30, 0.8, 60.0, 10.0
 PATRON_CODIGO = re.compile(r"\b(?:DOC|SOL)-[0-9]{4}\b")
 PATRON_CITA = re.compile(r"[\[【(]\s*([FT]\d+(?:\s*[,;]\s*[FT]\d+)*)\s*[\]】)]")
+RE_FIN_ORACION = re.compile(r"(?<=[.!?])\s+(?=[¿¡A-ZÁÉÍÓÚÑ])")
 PATRON_INFORME = re.compile(r"\b(informe|reporte)s?\b", re.IGNORECASE)
 PATRON_DESTINO = re.compile(r"^informe_[0-9a-f]{12}\.md$")
 PATRONES_SECRETOS = [(re.compile(r"eyJ[A-Za-z0-9_.-]+"), "<token>"), (re.compile(r"gsk_[A-Za-z0-9]+"), "<clave>"),
@@ -524,11 +525,23 @@ def estados_informados(informados: list[tuple[str, dict]]) -> set[str]:
     return {_normalizar_valor(r["registro"]["estado"]) for _, r in informados if r.get("registro")}
 
 
-def con_etiquetas(texto: str, citas: list[str]) -> str:
-    limpio = texto.strip()
-    final = limpio[-1] if limpio[-1:] in ".!?" else "."
-    cuerpo = limpio[:-1].rstrip() if limpio[-1:] in ".!?" else limpio
+def _etiquetar_oracion(oracion: str, citas: list[str]) -> str:
+    final = oracion[-1] if oracion[-1:] in ".!?" else "."
+    cuerpo = oracion[:-1].rstrip() if oracion[-1:] in ".!?" else oracion
     return f"{cuerpo} " + " ".join(f"[{c}]" for c in citas) + final
+
+
+def con_etiquetas(texto: str, citas: list[str]) -> str:
+    oraciones = [o for o in RE_FIN_ORACION.split(texto.strip()) if o.strip()]
+    return " ".join(_etiquetar_oracion(o.strip(), citas) for o in oraciones)
+
+
+def afirma_estado(texto: str, codigo: str) -> bool:
+    normal = rc.normalizar(texto)
+    codigo = rc.normalizar(codigo)
+    patron = (rf"\b{re.escape(codigo)}\b\W{{0,3}}(?:ya\s+)?(?:esta|se encuentra|figura|quedo|fue|ha sido|es|sigue|continua)\b"
+              rf"|\bestado\s+(?:actual\s+)?(?:de|del)\s+(?:la\s+|el\s+)?(?:\w+\s+)?{re.escape(codigo)}\b\W{{0,3}}(?:es|esta|era|fue|sigue)\b")
+    return bool(re.search(patron, normal))
 
 
 def validar_rag(contenido: str, catalogo: dict[str, dict], informados: list[tuple[str, dict]]) -> RagValidada:
@@ -575,8 +588,9 @@ def validar_rag(contenido: str, catalogo: dict[str, dict], informados: list[tupl
     visible = _normalizar_valor(" ".join([f.texto for f in salida.frases] + [limitacion]))
     if any(estado in visible for estado in estados_informados(informados)):
         raise SalidaInvalida("No escribas el estado de un documento o solicitud: el programa ya lo informó.", contenido)
-    if any(r["codigo_solicitud"] in visible.upper() for _, r in informados):
-        raise SalidaInvalida("No hables de códigos de documentos o solicitudes: responde solo la parte documental.", contenido)
+    textos = [f.texto for f in salida.frases] + [limitacion]
+    if any(afirma_estado(texto, r["codigo_solicitud"]) for texto in textos for _, r in informados):
+        raise SalidaInvalida("No afirmes el estado de un documento o solicitud: el programa ya lo informó.", contenido)
     return RagValidada(salida.estado, respuesta, citas, limitacion if armadas else "")
 
 

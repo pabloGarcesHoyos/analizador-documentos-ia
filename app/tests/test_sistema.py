@@ -238,8 +238,9 @@ def test_parte_documental_de_la_pregunta_mixta(texto, esperado):
 
 @pytest.mark.parametrize("mala, motivo", [
     (rag(("DOC-1001 está verificado y contabilizado; debe incluir NIT.", ("F1",))), "programa ya lo informó"),
-    (rag(("Para DOC-1001 debe incluir el NIT.", ("F1",))), "No hables de códigos"),
-    (rag(NIT, limitacion="El estado de DOC-1001 no aparece.", estado="parcial"), "No hables de códigos"),
+    (rag(("DOC-1001 está pendiente de firma.", ("F1",))), "No afirmes el estado"),
+    (rag(("El estado de la factura DOC-1001 es aprobado.", ("F1",))), "No afirmes el estado"),
+    (rag(NIT, limitacion="DOC-1001 ya fue contabilizado.", estado="parcial"), "No afirmes el estado"),
 ])
 def test_ruta_mixta_rechaza_codigos_y_estados_en_la_parte_documental(configuracion, almacen, conversacion, mala, motivo):
     llm = LLMGuionado(rag=[mala, rag()])
@@ -292,6 +293,9 @@ def test_ruta_rag_valida_cada_frase_y_reintenta_una_vez(configuracion, almacen, 
      "Debe incluir el NIT [F1]. Si no lo trae, no se contabiliza [F2]."),
     ((("Debe incluir el NIT", ("F1", "F2")),), "Debe incluir el NIT [F1] [F2]."),
     ((("¿Se acepta?", ("F3",)), ("No se acepta!", ("[F2]",))), "¿Se acepta [F3]? No se acepta [F2]!"),
+    ((("El analizador solo consulta información. No registra facturas y las remite a revisión humana.", ("F3",)),),
+     "El analizador solo consulta información [F3]. No registra facturas y las remite a revisión humana [F3]."),
+    ((("Lo emite TechCorp S.A. y debe incluir el NIT.", ("F1",)),), "Lo emite TechCorp S.A. y debe incluir el NIT [F1]."),
 ])
 def test_el_programa_arma_el_texto_con_una_cita_por_frase(configuracion, almacen, conversacion, frases, esperado):
     resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[rag(*frases)])), "¿Qué datos debe traer una factura?", conversacion)
@@ -859,3 +863,24 @@ def test_atender_entrega_el_aviso_al_control_de_cupo(configuracion, almacen, con
     sistema = armar(configuracion, almacen, LLMQueEspera(rag=[rag()]))
     asyncio.run(sistema.atender("¿Qué datos debe traer una factura?", conversacion, "token-a", al_esperar=vistos.append))
     assert vistos == [12.0] and si.AVISO_ESPERA.get() is None
+
+
+def test_ruta_mixta_acepta_el_codigo_como_ejemplo_de_formato_del_corpus(configuracion, almacen, conversacion):
+    pasaje = FRAGMENTOS[ESTADO_FACTURA]["content"].split("\n", 1)[1]
+    assert "por ejemplo DOC-1001" in pasaje
+    llm = LLMGuionado(rag=[rag(NIT, (pasaje.split(". ")[0] + ".", ("F3",)))])
+    resultado = atender(armar(configuracion, almacen, llm), "¿Qué requisitos tiene una factura y en qué estado está DOC-1001?", conversacion)
+    assert resultado.estado == "RESPONDIDA" and not resultado.traza["reintento_redaccion"]["usado"]
+    assert "por ejemplo DOC-1001 [F3]." in resultado.respuesta and resultado.respuesta.startswith(FRASE_DOC_1001)
+
+
+@pytest.mark.parametrize("texto, afirma", [
+    ("El estado de una factura radicada se consulta con su código de seguimiento, por ejemplo DOC-1001.", False),
+    ("Para consultar DOC-1001 usa el registro.", False),
+    ("DOC-1001 está pendiente de firma.", True),
+    ("El documento DOC-1001 figura como rechazado.", True),
+    ("El estado del documento DOC-1001 es verificado.", True),
+    ("DOC-1001 ya fue contabilizado.", True),
+])
+def test_afirmar_estado_frente_a_mencionar_el_codigo(texto, afirma):
+    assert si.afirma_estado(texto, "DOC-1001") is afirma
