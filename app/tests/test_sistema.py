@@ -254,6 +254,34 @@ def test_ruta_rag_valida_y_reintenta_una_vez(configuracion, almacen, conversacio
     assert resultado.estado == "ERROR_VALIDACION" and resultado.respuesta == si.MENSAJES["ERROR_VALIDACION"] and resultado.fuentes == []
 
 
+@pytest.mark.parametrize("respuesta, estado", [
+    ("No, el analizador no registra facturas; solo consulta información. Las peticiones de registro se remiten a revisión humana [F1].", "respondida"),
+    ("Debe incluir el NIT [F1]. Además debe traer el desglose de impuestos.", "parcial"),
+])
+def test_cada_frase_documental_necesita_su_etiqueta(configuracion, almacen, conversacion, respuesta, estado):
+    salida = rag(respuesta=respuesta, estado=estado, limitacion="" if estado == "respondida" else "Falta una parte.")
+    resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[salida, rag()])), "¿Qué datos debe traer una factura?", conversacion)
+    assert resultado.estado == "RESPONDIDA" and "Cada frase con contenido documental" in resultado.traza["reintento_redaccion"]["motivo"]
+    resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[salida, salida])), "¿Qué datos debe traer una factura?", conversacion)
+    assert resultado.estado == "ERROR_VALIDACION"
+
+
+@pytest.mark.parametrize("respuesta, citas", [
+    ("Debe incluir el NIT [F1]. Si no lo trae, no se contabiliza [F2].", ("F1", "F2")),
+    ("Debe incluir el NIT. [F1] Si no lo trae, no se contabiliza [F2].", ("F1", "F2")),
+    ("Debe incluir el NIT [F1, F2].", ("F1", "F2")),
+])
+def test_etiquetas_por_frase_aceptadas(configuracion, almacen, conversacion, respuesta, citas):
+    resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[rag(respuesta=respuesta, citas=citas)])), "¿Qué datos debe traer una factura?", conversacion)
+    assert resultado.estado == "RESPONDIDA" and not resultado.traza["reintento_redaccion"]["usado"]
+
+
+def test_aclaracion_y_sin_evidencia_no_exigen_etiqueta_por_frase(configuracion, almacen, conversacion):
+    salida = rag(respuesta="Los documentos no tratan ese plazo. Indica el trámite.", citas=(), estado="evidencia_insuficiente", limitacion="Sin pasajes.")
+    resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[salida])), "¿Qué plazo tiene una factura?", conversacion)
+    assert resultado.estado == "SIN_EVIDENCIA" and not resultado.traza["reintento_redaccion"]["usado"]
+
+
 def test_reintento_rag_informa_la_causa_como_en_el_corte2(configuracion, almacen, conversacion):
     llm = LLMGuionado(rag=[rag(citas=("F1", "F2")), rag()])
     atender(armar(configuracion, almacen, llm), "¿Qué datos debe traer una factura?", conversacion)
@@ -476,7 +504,7 @@ def test_conversacion_ajena_o_sesion_invalida(configuracion, almacen, conversaci
 def test_traza_suma_los_tokens_y_registra_versiones(configuracion, almacen, conversacion):
     resultado = atender(armar(configuracion, almacen, LLMGuionado(rag=[rag(citas=("F1", "F2")), rag()])), "¿Qué datos debe traer una factura?", conversacion)
     assert resultado.traza["tokens"] == {"entrada": 200, "salida": 40, "razonamiento": 10, "total": 240}
-    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v1", "rag_v4", "enrutador_v1")
+    assert (resultado.traza["flujo"], resultado.traza["prompt_rag"], resultado.traza["prompt_enrutador"]) == ("flujo_v2", "rag_v4", "enrutador_v1")
 
 
 @pytest.mark.parametrize("resultado_mcp, esperado", [

@@ -26,7 +26,7 @@ SERVIDOR_MCP = CARPETA_APP / "servidor_mcp.py"
 SCRIPT_MCP_ARCHIVOS = CARPETA_APP / "mcp_archivos/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"
 CARPETA_INFORMES = CARPETA_APP / "informes"
 MODELO_GENERATIVO = "openai/gpt-oss-20b"
-FLUJO_VERSION, PROMPT_RAG_VERSION, PROMPT_ENRUTADOR_VERSION = "flujo_v1", "rag_v4", "enrutador_v1"
+FLUJO_VERSION, PROMPT_RAG_VERSION, PROMPT_ENRUTADOR_VERSION = "flujo_v2", "rag_v4", "enrutador_v1"
 MAX_CONSULTAS, REINTENTOS_REDACCION, REINTENTOS_JSON, TURNOS_CONTEXTO = 2, 1, 1, 4
 MAX_SEGUNDOS = 90
 MAX_ENTRADA, MAX_CONSULTA, MAX_RESPUESTA, MAX_LIMITACION = 1200, 500, 2500, 600
@@ -37,6 +37,7 @@ PATRON_CODIGO = re.compile(r"\b(?:DOC|SOL)-[0-9]{4}\b")
 PATRON_CITA = re.compile(r"[\[【(]\s*([FT]\d+(?:\s*[,;]\s*[FT]\d+)*)\s*[\]】)]")
 PATRON_INFORME = re.compile(r"\b(informe|reporte)s?\b", re.IGNORECASE)
 PATRON_DESTINO = re.compile(r"^informe_[0-9a-f]{12}\.md$")
+PATRON_SOLO_CITAS = re.compile(r"^(?:\s*[\[【(]\s*[FT]\d+(?:\s*[,;]\s*[FT]\d+)*\s*[\]】)])+\s*[.!?]?\s*$")
 PATRONES_SECRETOS = [(re.compile(r"eyJ[A-Za-z0-9_.-]+"), "<token>"), (re.compile(r"gsk_[A-Za-z0-9]+"), "<clave>"),
                      (re.compile(r"sb_(?:publishable|secret)_[A-Za-z0-9_-]+"), "<clave>"),
                      (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"), "<correo>")]
@@ -475,6 +476,29 @@ def menciones(texto: str) -> list[str]:
     return [e.strip() for grupo in PATRON_CITA.findall(texto) for e in re.split(r"[,;]", grupo)]
 
 
+def frases(texto: str) -> list[str]:
+    unidas: list[str] = []
+    for parte in (f for f in re.split(r"(?<=[.!?])\s+|\n+", texto) if f.strip()):
+        if unidas and PATRON_SOLO_CITAS.match(parte):
+            unidas[-1] = f"{unidas[-1]} {parte.strip()}"
+        else:
+            unidas.append(parte)
+    return unidas
+
+
+def etiquetas_por_frase(texto: str) -> list[tuple[str, set[str]]]:
+    lista = frases(texto)
+    resultado = []
+    for indice, frase in enumerate(lista):
+        propias = set(menciones(frase))
+        if indice + 1 < len(lista):
+            inicio = re.match(r"^\s*((?:[\[【(]\s*[FT]\d+(?:\s*[,;]\s*[FT]\d+)*\s*[\]】)]\s*)+)", lista[indice + 1])
+            if inicio:
+                propias |= set(menciones(inicio.group(1)))
+        resultado.append((frase, propias))
+    return resultado
+
+
 def filtrar_secretos(texto: str) -> str:
     for patron, reemplazo in PATRONES_SECRETOS:
         texto = patron.sub(reemplazo, texto)
@@ -523,6 +547,10 @@ def validar_rag(contenido: str, catalogo: dict[str, dict], informados: list[tupl
         raise SalidaInvalida("Una respuesta documental necesita citas.", contenido)
     if salida.estado != "respondida" and not salida.limitacion.strip():
         raise SalidaInvalida("Falta explicar la limitación o la aclaración.", contenido)
+    if salida.estado in ("respondida", "parcial"):
+        sin_fuente = [f for f, propias in etiquetas_por_frase(salida.respuesta) if not any(e.startswith("F") for e in propias)]
+        if sin_fuente:
+            raise SalidaInvalida(f"Cada frase con contenido documental necesita su etiqueta [F#]; sin etiqueta: \"{sin_fuente[0][:120]}\".", contenido)
     texto = _normalizar_valor(salida.respuesta)
     if any(estado in texto for estado in estados_informados(informados)):
         raise SalidaInvalida("No escribas el estado de un documento o solicitud: el programa ya lo informó.", contenido)
