@@ -325,3 +325,38 @@ def test_la_interfaz_se_construye_y_la_atencion_va_de_a_una(entorno):
     atencion = [d for d in demo.fns.values() if d.concurrency_id == "atencion"]
     assert atencion and all(d.concurrency_limit == ap.CONCURRENCIA_ATENCION for d in atencion)
     assert all(d.api_visibility == "private" for d in demo.fns.values())
+
+
+def comparar_en_vivo_y_recargada(e, sesion, texto):
+    salida = responder(e, sesion, texto)
+    recargada = e.interfaz.seleccionar(sesion, salida["conversacion"])
+    assert recargada["chat"] == salida["chat"]
+    return salida["chat"]
+
+
+def test_conversacion_recargada_identica_con_fuentes_y_consultas(entorno):
+    chat = comparar_en_vivo_y_recargada(entorno, entrar(entorno), MIXTA)
+    assert [m.get("metadata", {}).get("title") for m in chat[1:]] == [None, "Fuentes: [F1]", "Consultas: [T1]"]
+
+
+def test_conversacion_recargada_identica_con_limitacion(entorno):
+    entorno.llm.colas["respuesta_rag"] = [rag(respuesta="Debe incluir el NIT [F1].", estado="parcial", limitacion="Los pasajes no tratan el total.")]
+    chat = comparar_en_vivo_y_recargada(entorno, entrar(entorno), "¿Qué datos debe traer una factura?")
+    assert "Limitación: Los pasajes no tratan el total." in chat[1]["content"] and ap.ESTADOS["PARCIAL"] in chat[1]["content"]
+
+
+def test_conversacion_recargada_identica_con_error_tecnico_y_su_detalle(entorno):
+    entorno.sistema.mcp_estado = MCPFalso(error=si.ErrorTecnico("mcp"))
+    chat = comparar_en_vivo_y_recargada(entorno, entrar(entorno), "¿Cómo va DOC-1001?")
+    assert chat[-1]["content"].endswith("Detalle: " + si.DETALLE_TECNICO["mcp"])
+
+
+def test_conversacion_recargada_identica_con_limite_de_consultas(entorno):
+    chat = comparar_en_vivo_y_recargada(entorno, entrar(entorno), "¿Cómo van DOC-1003, SOL-1002 y SOL-1001?")
+    assert "Limitación: " + si.MENSAJES["LIMITE_CONSULTAS"] in chat[1]["content"] and chat[-1]["metadata"]["title"] == "Consultas: [T1] [T2]"
+
+
+def test_detalle_solo_se_muestra_en_errores_tecnicos():
+    fila = {"rol": "asistente", "contenido": "texto", "estado": "RESPONDIDA", "detalle_error": "interno", "limitacion": ""}
+    assert "Detalle" not in ap.mensajes_de_fila(fila)[0]["content"]
+    assert "Detalle: interno" in ap.mensajes_de_fila({**fila, "estado": "ERROR_TECNICO"})[0]["content"]

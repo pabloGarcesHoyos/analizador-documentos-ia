@@ -108,7 +108,15 @@ def mensajes_asistente(estado: str, contenido: str, fuentes: list[dict], herrami
 def mensajes_de_fila(fila: dict) -> list[dict]:
     if fila.get("rol") == "usuario":
         return [{"role": "user", "content": fila.get("contenido", "")}]
-    return mensajes_asistente(fila.get("estado"), fila.get("contenido", ""), fila.get("fuentes") or [], fila.get("herramientas") or [])
+    detalle = (fila.get("detalle_error") or "") if fila.get("estado") == "ERROR_TECNICO" else ""
+    return mensajes_asistente(fila.get("estado"), fila.get("contenido", ""), fila.get("fuentes") or [], fila.get("herramientas") or [],
+                              fila.get("limitacion") or "", detalle)
+
+
+def fila_de_resultado(resultado: si.ResultadoAtencion) -> dict:
+    return {"rol": "asistente", "contenido": resultado.respuesta, "estado": resultado.estado, "fuentes": resultado.fuentes,
+            "herramientas": resultado.herramientas, "limitacion": resultado.limitacion,
+            "detalle_error": resultado.detalle_error}
 
 
 def _oculto() -> dict:
@@ -214,8 +222,7 @@ class Interfaz:
         chat = list(chat or [])
         if not chat or chat[-1].get("role") != "user":
             chat.append({"role": "user", "content": texto})
-        chat += mensajes_asistente(resultado.estado, resultado.respuesta, resultado.fuentes, resultado.herramientas, resultado.limitacion,
-                                   resultado.detalle_error if resultado.estado == "ERROR_TECNICO" else "")
+        chat += mensajes_de_fila(fila_de_resultado(resultado))
         indicador = texto_estado(resultado.estado)
         if not resultado.persistido:
             indicador += " Este turno no se pudo guardar en el historial."

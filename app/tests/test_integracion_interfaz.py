@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
@@ -7,6 +8,7 @@ import almacenamiento as al
 import app as ap
 import sistema as si
 from test_integracion_supabase import _entorno
+from test_sistema import LLMGuionado, MCPFalso, RecuperadorFalso, rag
 
 pytestmark = pytest.mark.integracion
 
@@ -63,3 +65,22 @@ def test_renovacion_real_del_token(entorno, interfaz):
     assert renovada["access_token"] != sesion["access_token"] and renovada["refresh_token"] != sesion["refresh_token"]
     assert interfaz.almacen.usuario(renovada["access_token"]) == sesion["usuario_id"]
     interfaz.salir(renovada)
+
+
+@pytest.mark.parametrize("texto, salida_rag", [
+    ("¿Qué requisitos tiene una factura y en qué estado está DOC-1001?", rag()),
+    ("¿Qué datos debe traer una factura?", rag(respuesta="Debe incluir el NIT [F1].", estado="parcial", limitacion="Los pasajes no tratan el total.")),
+    ("¿Cómo van DOC-1003, SOL-1002 y SOL-1001?", None),
+])
+def test_conversacion_recargada_se_ve_igual_que_en_vivo(entorno, interfaz, tmp_path, texto, salida_rag):
+    configuracion = si.ConfiguracionSistema(al.ConfiguracionSupabase.desde_entorno(entorno), "sin-uso", "corpus", str(uuid.uuid4()),
+                                            carpeta_informes=tmp_path, max_segundos=30)
+    sistema = si.Sistema(configuracion, almacen=interfaz.almacen, recuperador=RecuperadorFalso(), llm=LLMGuionado(rag=[salida_rag] if salida_rag else []),
+                         mcp_estado=MCPFalso(), escritor=None, fabrica_fuente=lambda token: "fuente")
+    vista = ap.Interfaz(interfaz.autenticacion, interfaz.almacen, sistema)
+    sesion = vista.entrar(entorno["PRUEBA_A_EMAIL"], entorno["PRUEBA_A_PASSWORD"])["sesion"]
+    en_vivo = asyncio.run(vista.responder(sesion, None, texto, []))
+    assert en_vivo["chat"][1]["content"].startswith("**") and len(en_vivo["chat"]) >= 3
+    recargada = vista.seleccionar(sesion, en_vivo["conversacion"])
+    assert recargada["chat"] == en_vivo["chat"]
+    vista.salir(sesion)
