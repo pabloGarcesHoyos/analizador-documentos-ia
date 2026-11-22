@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.ejemplo
+!.env.pruebas.ejemplo
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3*
+.pytest_cache/
+app/modelos/
+app/mcp_archivos/
+node_modules/
