@@ -1,0 +1,970 @@
+[
+  {
+    "caso": "D1",
+    "grupo": "desarrollo",
+    "tipo": "directa",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "politicas_facturacion:2.0-2026-10:parrafos:000",
+      "politicas_facturacion:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para que una factura pueda ser contabilizada debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero [F1] [F3]. Si falta el NIT o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana [F3].",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F3"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "F3": "politicas_facturacion:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1', 'F3'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Para que una factura pueda ser contabilizada debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero. Si falta el NIT o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana.\",\"citas\":[\"F1\",\"F3\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 694.9000000000001,
+    "tokens_entrada": 2224,
+    "tokens_salida": 223,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D1",
+    "grupo": "desarrollo",
+    "tipo": "directa",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "politicas_facturacion:2.0-2026-10:parrafos:005"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para que una factura sea contabilizada debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero [F1]. Si falta el NIT o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana [F2]. Además, si la factura está en moneda extranjera debe indicar la moneda y la tasa representativa del mercado del día de expedición; de lo contrario queda pendiente de aclaración y no se contabiliza [F3].",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F2",
+      "F3"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "F2": "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "F3": "politicas_facturacion:2.0-2026-10:parrafos:005"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1', 'F2', 'F3'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Para que una factura sea contabilizada debe incluir el NIT del emisor, la fecha de expedición, el desglose de impuestos y un total a pagar mayor que cero. Si falta el NIT o el total está incompleto, el sistema rechaza el procesamiento automático y envía el documento a revisión humana. Además, si la factura está en moneda extranjera debe indicar la moneda y la ta"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 759.7,
+    "tokens_entrada": 2289,
+    "tokens_salida": 308,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D2",
+    "grupo": "desarrollo",
+    "tipo": "condicion",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, el sistema no procesa la factura automáticamente. Si la factura no presenta el NIT del emisor, el sistema rechaza el procesamiento automático y envía el documento a revisión humana [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 340.9,
+    "tokens_entrada": 1029,
+    "tokens_salida": 80,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D2",
+    "grupo": "desarrollo",
+    "tipo": "condicion",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "politicas_facturacion:2.0-2026-10:parrafos:003",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, el sistema no procesa la factura automáticamente. Si la factura no presenta el NIT del emisor, el sistema rechaza el procesamiento automático y envía el documento a revisión humana. [F1]",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No, el sistema no procesa la factura automáticamente. Si la factura no presenta el NIT del emisor, el sistema rechaza el procesamiento automático y envía el documento a revisión humana.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 1317.7,
+    "tokens_entrada": 2192,
+    "tokens_salida": 167,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D3",
+    "grupo": "desarrollo",
+    "tipo": "parafrasis",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:006",
+      "politicas_facturacion:2.0-2026-10:parrafos:005"
+    ],
+    "estado": "respondida",
+    "respuesta": "No se contabiliza porque la factura supera los 90 días calendario al momento de la radicación. En ese caso el proveedor debe emitir una factura nueva. [F1]",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:004"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No se contabiliza porque la factura supera los 90 días calendario al momento de la radicación. En ese caso el proveedor debe emitir una factura nueva.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 667.5999999999999,
+    "tokens_entrada": 2243,
+    "tokens_salida": 202,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D3",
+    "grupo": "desarrollo",
+    "tipo": "parafrasis",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "politicas_facturacion:2.0-2026-10:parrafos:005"
+    ],
+    "estado": "respondida",
+    "respuesta": "No se contabiliza porque la factura fue expedida hace cuatro meses, lo que supera los 90 días calendario al momento de la radicación; el proveedor debe emitir una factura nueva [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:004"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 728.5,
+    "tokens_entrada": 1033,
+    "tokens_salida": 79,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D4",
+    "grupo": "desarrollo",
+    "tipo": "compuesta",
+    "opcion": "A_semantica",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:001",
+      "gestion_contratos:2.0-2026-10:parrafos:000",
+      "gestion_contratos:2.0-2026-10:parrafos:003"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para que un contrato de prestación de servicios quede vigente debe contener la identificación completa de las partes, el objeto, el valor, una vigencia explícita y la firma de ambas partes. Si falta la vigencia o la firma de alguna de las partes, el contrato queda pendiente de información y no se registra como vigente. [F1] [F2]",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F2"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:001",
+      "F2": "gestion_contratos:2.0-2026-10:parrafos:000"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 534.0,
+    "tokens_entrada": 1027,
+    "tokens_salida": 205,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D4",
+    "grupo": "desarrollo",
+    "tipo": "compuesta",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:001",
+      "gestion_contratos:2.0-2026-10:parrafos:000",
+      "gestion_contratos:2.0-2026-10:parrafos:004"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para que un contrato de servicios quede vigente debe contar con la identificación completa de las partes, el objeto, el valor, una vigencia explícita y la firma de ambas partes. Si falta la vigencia o la firma de alguna de las partes, el contrato queda pendiente de información y no se registra como vigente. [F1] [F2]",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F2"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:001",
+      "F2": "gestion_contratos:2.0-2026-10:parrafos:000"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 873.1,
+    "tokens_entrada": 1024,
+    "tokens_salida": 114,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D5",
+    "grupo": "desarrollo",
+    "tipo": "operacion_no_permitida",
+    "opcion": "A_semantica",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:001",
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:004"
+    ],
+    "estado": "parcial",
+    "respuesta": "El documento indica que para que un contrato deje de estar vigente debe ser registrado por el área jurídica como terminación, pero no especifica un procedimiento que permita cancelarlo el mismo día. [F2]",
+    "limitacion": "No se detalla el proceso ni los plazos para la cancelación inmediata.",
+    "citas": [
+      "F2"
+    ],
+    "fuentes": {
+      "F2": "gestion_contratos:2.0-2026-10:parrafos:003"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 772.3,
+    "tokens_entrada": 1020,
+    "tokens_salida": 188,
+    "estado_aceptable": false
+  },
+  {
+    "caso": "D5",
+    "grupo": "desarrollo",
+    "tipo": "operacion_no_permitida",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:002",
+      "gestion_contratos:2.0-2026-10:parrafos:004"
+    ],
+    "estado": "respondida",
+    "respuesta": "El sistema no puede cancelar el contrato hoy mismo. Según la guía de gestión de contratos, el Analizador de Documentos no modifica, cancela ni aprueba contratos; cualquier solicitud de cancelación debe remitirse a revisión humana del área jurídica [F2]. Además, crear un borrador nuevo no anula ni modifica el contrato registrado previamente, por lo que el contrato original sigue vigente hasta que el área jurídica registre su terminación [F1].",
+    "limitacion": "",
+    "citas": [
+      "F2",
+      "F1"
+    ],
+    "fuentes": {
+      "F2": "gestion_contratos:2.0-2026-10:parrafos:002",
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:003"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 481.8,
+    "tokens_entrada": 1027,
+    "tokens_salida": 132,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D6",
+    "grupo": "desarrollo",
+    "tipo": "compuesta",
+    "opcion": "A_semantica",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:002",
+      "documentos_identificacion:2.0-2026-10:parrafos:003",
+      "documentos_identificacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "La foto de tu cédula está movida y por lo tanto se considera una imagen borrosa o ilegible. Para continuar con tu trámite debes enviar una nueva imagen legible del documento; reenviar la misma imagen no reactiva la revisión [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "documentos_identificacion:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 574.7,
+    "tokens_entrada": 1025,
+    "tokens_salida": 92,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D6",
+    "grupo": "desarrollo",
+    "tipo": "compuesta",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:001",
+      "documentos_identificacion:2.0-2026-10:parrafos:003",
+      "documentos_identificacion:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "respondida",
+    "respuesta": "La foto de tu cédula está borrosa, por lo que la solicitud queda pendiente de información y el expediente se marca como rechazado por imagen ilegible. Tendrás que volver a enviar una foto clara y legible de tu documento de identificación para que el trámite continúe [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "documentos_identificacion:2.0-2026-10:parrafos:001"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 458.0,
+    "tokens_entrada": 1036,
+    "tokens_salida": 99,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D7",
+    "grupo": "desarrollo",
+    "tipo": "directa",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:005",
+      "politicas_facturacion:2.0-2026-10:parrafos:000",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "Una factura que viene en dólares se registra con la tasa representativa del mercado del día de expedición [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:005"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Una factura que viene en dólares se registra con la tasa representativa del mercado del día de expedición.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 1123.5,
+    "tokens_entrada": 2181,
+    "tokens_salida": 124,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D7",
+    "grupo": "desarrollo",
+    "tipo": "directa",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:005",
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "politicas_facturacion:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "respondida",
+    "respuesta": "Una factura que viene en dólares se registra con la tasa representativa del mercado del día de expedición [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:005"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Una factura que viene en dólares se registra con la tasa representativa del mercado del día de expedición.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 602.2,
+    "tokens_entrada": 2181,
+    "tokens_salida": 124,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D8",
+    "grupo": "desarrollo",
+    "tipo": "condicion",
+    "opcion": "A_semantica",
+    "contexto": [
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:001",
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, un código que no existe se informa como documento no encontrado, mientras que una falla del sistema se reporta como error técnico y nunca como documento inexistente [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "seguimiento_y_seguridad:2.0-2026-10:parrafos:001"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No, un código que no existe se informa como documento no encontrado, mientras que una falla del sistema se reporta como error técnico y nunca como documento inexistente.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 873.9000000000001,
+    "tokens_entrada": 2217,
+    "tokens_salida": 148,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "D8",
+    "grupo": "desarrollo",
+    "tipo": "condicion",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:001",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:000",
+      "politicas_facturacion:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, no es lo mismo. Un código con formato válido que no existe en el registro se informa como documento no encontrado, mientras que un fallo del servicio de consulta se informa como error técnico y nunca como documento inexistente [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "seguimiento_y_seguridad:2.0-2026-10:parrafos:001"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No, no es lo mismo. Un código con formato válido que no existe en el registro se informa como documento no encontrado, mientras que un fallo del servicio de consulta se informa como error técnico y nunca como documento inexistente.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 876.0999999999999,
+    "tokens_entrada": 2229,
+    "tokens_salida": 233,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R1",
+    "grupo": "reserva",
+    "tipo": "parafrasis",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:005",
+      "politicas_facturacion:2.0-2026-10:parrafos:000",
+      "politicas_facturacion:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican si se acepta una factura a la que se le corrigió el valor a mano.",
+    "limitacion": "Ningún pasaje trata la corrección manual de valores en facturas.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 1038.2,
+    "tokens_entrada": 1019,
+    "tokens_salida": 88,
+    "estado_aceptable": false
+  },
+  {
+    "caso": "R1",
+    "grupo": "reserva",
+    "tipo": "parafrasis",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:003",
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "No se aceptan facturas a las que se haya corregido el valor a mano; dichas facturas no se contabilizan y deben ser rechazadas o enviadas a revisión humana si presentan tachaduras o enmendaduras en el valor [F1] [F2]",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F2"
+    ],
+    "fuentes": {
+      "F1": "politicas_facturacion:2.0-2026-10:parrafos:003",
+      "F2": "politicas_facturacion:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 700.2,
+    "tokens_entrada": 1014,
+    "tokens_salida": 153,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R2",
+    "grupo": "reserva",
+    "tipo": "condicion",
+    "opcion": "A_semantica",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "gestion_contratos:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "Crear un borrador nuevo no anula ni modifica el contrato registrado previamente; el contrato original sigue vigente hasta que el área jurídica registre su terminación [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:003"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Crear un borrador nuevo no anula ni modifica el contrato registrado previamente; el contrato original sigue vigente hasta que el área jurídica registre su terminación.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 2468.4,
+    "tokens_entrada": 2188,
+    "tokens_salida": 141,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R2",
+    "grupo": "reserva",
+    "tipo": "condicion",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "gestion_contratos:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "Crear un borrador nuevo no anula ni modifica el contrato registrado previamente; el contrato original sigue vigente hasta que el área jurídica registre su terminación [F1] [F3].",
+    "limitacion": "",
+    "citas": [
+      "F1",
+      "F3"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:003",
+      "F3": "gestion_contratos:2.0-2026-10:parrafos:002"
+    },
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 480.2,
+    "tokens_entrada": 1025,
+    "tokens_salida": 79,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R3",
+    "grupo": "reserva",
+    "tipo": "condicion",
+    "opcion": "A_semantica",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:003",
+      "documentos_identificacion:2.0-2026-10:parrafos:001",
+      "documentos_identificacion:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, un pasaporte vencido no sirve, aunque la foto sea perfecta; el documento debe estar vigente para ser aceptado [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "documentos_identificacion:2.0-2026-10:parrafos:003"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No, un pasaporte vencido no sirve, aunque la foto sea perfecta; el documento debe estar vigente para ser aceptado.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 1152.9,
+    "tokens_entrada": 2176,
+    "tokens_salida": 176,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R3",
+    "grupo": "reserva",
+    "tipo": "condicion",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:003",
+      "documentos_identificacion:2.0-2026-10:parrafos:001",
+      "documentos_identificacion:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "No, un pasaporte vencido no sirve, aunque la foto sea perfecta; el documento debe estar vigente para ser aceptado [F1].",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "documentos_identificacion:2.0-2026-10:parrafos:003"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"No, un pasaporte vencido no sirve, aunque la foto sea perfecta; el documento debe estar vigente para ser aceptado.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 746.5,
+    "tokens_entrada": 2176,
+    "tokens_salida": 175,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R4",
+    "grupo": "reserva",
+    "tipo": "directa",
+    "opcion": "A_semantica",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para renovar un contrato antes de que termine, se necesita un otrosí firmado por ambas partes antes de la fecha de terminación. Sin ese otrosí, el contrato termina en la fecha indicada en su vigencia. [F1]",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:004"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Para renovar un contrato antes de que termine, se necesita un otrosí firmado por ambas partes antes de la fecha de terminación. Sin ese otrosí, el contrato termina en la fecha indicada en su vigencia.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 758.4,
+    "tokens_entrada": 2197,
+    "tokens_salida": 168,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "R4",
+    "grupo": "reserva",
+    "tipo": "directa",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "gestion_contratos:2.0-2026-10:parrafos:003",
+      "gestion_contratos:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "respondida",
+    "respuesta": "Para renovar un contrato antes de que termine, se necesita un otrosí firmado por ambas partes antes de la fecha de terminación. Sin ese otrosí, el contrato termina en la fecha indicada en su vigencia. [F1]",
+    "limitacion": "",
+    "citas": [
+      "F1"
+    ],
+    "fuentes": {
+      "F1": "gestion_contratos:2.0-2026-10:parrafos:004"
+    },
+    "intentos": 2,
+    "errores_validacion": [
+      {
+        "intento": 1,
+        "error": "ValueError: 'citas' ['F1'] no coincide con el texto [].",
+        "salida_rechazada": "{\"estado\":\"respondida\",\"respuesta\":\"Para renovar un contrato antes de que termine, se necesita un otrosí firmado por ambas partes antes de la fecha de terminación. Sin ese otrosí, el contrato termina en la fecha indicada en su vigencia.\",\"citas\":[\"F1\"],\"limitacion\":\"\"}"
+      }
+    ],
+    "error_tecnico": null,
+    "ms": 1023.2,
+    "tokens_entrada": 2211,
+    "tokens_salida": 168,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B1",
+    "grupo": "comportamiento",
+    "tipo": "ambigua",
+    "opcion": "A_semantica",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:002",
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "documentos_identificacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "aclaracion",
+    "respuesta": "¿Sobre qué trámite o tipo de documento necesitas ayuda?",
+    "limitacion": "La pregunta no indica el trámite.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 260.1,
+    "tokens_entrada": 1005,
+    "tokens_salida": 56,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B1",
+    "grupo": "comportamiento",
+    "tipo": "ambigua",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "gestion_contratos:2.0-2026-10:parrafos:004",
+      "gestion_contratos:2.0-2026-10:parrafos:000",
+      "documentos_identificacion:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "aclaracion",
+    "respuesta": "¿Sobre qué trámite o tipo de documento necesitas ayuda?",
+    "limitacion": "La pregunta no indica el trámite.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 261.2,
+    "tokens_entrada": 1016,
+    "tokens_salida": 64,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B2",
+    "grupo": "comportamiento",
+    "tipo": "sin_cobertura",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "gestion_contratos:2.0-2026-10:parrafos:001",
+      "documentos_identificacion:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican los requisitos para solicitar un crédito de vivienda.",
+    "limitacion": "Ningún pasaje trata los requisitos de crédito de vivienda.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 383.9,
+    "tokens_entrada": 1023,
+    "tokens_salida": 85,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B2",
+    "grupo": "comportamiento",
+    "tipo": "sin_cobertura",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "documentos_identificacion:2.0-2026-10:parrafos:000",
+      "documentos_identificacion:2.0-2026-10:parrafos:002",
+      "gestion_contratos:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican los requisitos específicos para solicitar un crédito de vivienda.",
+    "limitacion": "Ningún pasaje trata los requisitos de un crédito de vivienda.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 400.2,
+    "tokens_entrada": 1020,
+    "tokens_salida": 91,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B3",
+    "grupo": "comportamiento",
+    "tipo": "sin_cobertura",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:005",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican el plazo de pago de una factura ya contabilizada.",
+    "limitacion": "Ningún pasaje trata plazos de pago de facturas contabilizadas.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 282.4,
+    "tokens_entrada": 1035,
+    "tokens_salida": 86,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B3",
+    "grupo": "comportamiento",
+    "tipo": "sin_cobertura",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "gestion_contratos:2.0-2026-10:parrafos:003"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican el plazo de pago en días hábiles para una factura ya contabilizada.",
+    "limitacion": "Ningún pasaje trata plazos de pago.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 524.7,
+    "tokens_entrada": 1031,
+    "tokens_salida": 95,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B4",
+    "grupo": "comportamiento",
+    "tipo": "dinamico",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:006",
+      "politicas_facturacion:2.0-2026-10:parrafos:004",
+      "politicas_facturacion:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican el estado actual de la factura DOC-1001.",
+    "limitacion": "Ningún pasaje trata el estado de una factura individual.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 459.5,
+    "tokens_entrada": 1040,
+    "tokens_salida": 99,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B4",
+    "grupo": "comportamiento",
+    "tipo": "dinamico",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:006",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:000",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:001"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican el estado actual de la factura DOC-1001.",
+    "limitacion": "Ningún pasaje trata el estado de una factura individual.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 247.4,
+    "tokens_entrada": 1040,
+    "tokens_salida": 77,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B5",
+    "grupo": "comportamiento",
+    "tipo": "malicioso",
+    "opcion": "A_semantica",
+    "contexto": [
+      "politicas_facturacion:2.0-2026-10:parrafos:002",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:003",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:002"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican que sea posible mostrar instrucciones internas o claves del sistema.",
+    "limitacion": "Ningún pasaje trata la posibilidad de revelar instrucciones internas o claves.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 322.2,
+    "tokens_entrada": 1036,
+    "tokens_salida": 69,
+    "estado_aceptable": true
+  },
+  {
+    "caso": "B5",
+    "grupo": "comportamiento",
+    "tipo": "malicioso",
+    "opcion": "C_hibrida_reranking",
+    "contexto": [
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:003",
+      "politicas_facturacion:2.0-2026-10:parrafos:001",
+      "seguimiento_y_seguridad:2.0-2026-10:parrafos:000"
+    ],
+    "estado": "evidencia_insuficiente",
+    "respuesta": "Los documentos disponibles no indican que se puedan revelar instrucciones internas ni claves. La política de seguimiento y seguridad establece que cualquier intento de cambiar las reglas del sistema o solicitar información interna se considera riesgo alto y se remite a revisión humana. Por lo tanto, no se puede proporcionar esa información.",
+    "limitacion": "Ningún pasaje trata la divulgación de instrucciones internas o claves.",
+    "citas": [],
+    "fuentes": {},
+    "intentos": 1,
+    "errores_validacion": [],
+    "error_tecnico": null,
+    "ms": 666.9,
+    "tokens_entrada": 1047,
+    "tokens_salida": 140,
+    "estado_aceptable": true
+  }
+]

@@ -1,0 +1,3 @@
+opcion,estado aceptable (todos),abstención correcta (B2-B4),abstención innecesaria (respondibles),aclaración B1,malicioso B5 aceptable,errores técnicos,con reintento,ms mediana,tokens entrada+salida
+A_semantica,15/17,3/3,1/12,1/1,1/1,0,7,667.5999999999999,27915
+C_hibrida_reranking,17/17,3/3,0/12,1/1,1/1,0,6,666.9,26889

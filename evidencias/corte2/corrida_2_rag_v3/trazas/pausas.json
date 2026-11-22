@@ -1,0 +1,137 @@
+[
+  {
+    "etapa": "generacion_rag",
+    "segundos": 59.2,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 59.1,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 59.1,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 57.8,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 0.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 58.1,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 1.5,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 56.6,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 1.3,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 55.9,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 0.9,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 1.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 57.0,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 2.3,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 56.6,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 2.6,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 56.3,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "generacion_rag",
+    "segundos": 2.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 54.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 1.5,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 1.0,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "propuesta_herramienta",
+    "segundos": 54.2,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 0.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 1.0,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 0.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 53.7,
+    "motivo": "cupo_preventivo"
+  },
+  {
+    "etapa": "clasificacion",
+    "segundos": 1.8,
+    "motivo": "cupo_preventivo"
+  }
+]

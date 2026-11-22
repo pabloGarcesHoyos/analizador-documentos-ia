@@ -1,0 +1,17 @@
+[
+  {
+    "caso": "integracion_rag",
+    "ruta": "rag",
+    "estado": "RAG_RESPONDIDA"
+  },
+  {
+    "caso": "integracion_herramienta",
+    "ruta": "herramienta",
+    "estado": "OK_CONSULTA"
+  },
+  {
+    "caso": "integracion_documento",
+    "ruta": "documento",
+    "estado": "OK_PIDE_ACLARACION"
+  }
+]
