@@ -8,6 +8,6 @@ __pycache__/
 *.sqlite3*
 .pytest_cache/
 app/modelos/
-app/mcp_archivos/
+app/mcp_archivos/node_modules/
 node_modules/
 app/informes/

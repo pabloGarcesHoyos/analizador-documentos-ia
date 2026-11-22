@@ -53,6 +53,14 @@ class TokenizadorXLMR:
     def _ids(self, texto: str) -> list[int]:
         return [DESCONOCIDO if i == 0 else i + 1 for i in self.sp.encode(texto, out_type=int)]
 
+    def contar(self, texto: str) -> int:
+        return len(self._ids(texto)) + 2
+
+    def desplazamientos(self, texto: str) -> list[tuple[int, int]]:
+        datos = texto.encode("utf-8")
+        largo = lambda posicion: len(datos[:posicion].decode("utf-8", "ignore"))
+        return [(largo(p.begin), largo(p.end)) for p in self.sp.encode(texto, out_type="proto").pieces]
+
     def uno(self, texto: str, maximo: int) -> list[int]:
         return [INICIO, *self._ids(texto)[: maximo - 2], FIN]
 
