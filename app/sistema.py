@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import hashlib
 import json
 import math
@@ -32,6 +33,9 @@ MAX_SEGUNDOS = 90
 MAX_ENTRADA, MAX_CONSULTA, MAX_RESPUESTA, MAX_LIMITACION = 1200, 500, 2500, 600
 TIEMPO_GROQ, TIEMPO_MCP = 25, 15
 MAX_TOKENS_ESTRICTO = 3000
+CARACTERES_POR_TOKEN = 3.3
+SALIDA_TIPICA = {"respuesta_rag": 200, "analisis_documental": 400, "enrutador": 160}
+SALIDA_DESCONOCIDA = 800
 GROQ_TPM, GROQ_RPM, FRACCION_CUPO, VENTANA_CUPO, TIEMPO_MINIMO_LLAMADA = 8000, 30, 0.8, 60.0, 10.0
 PATRON_CODIGO = re.compile(r"\b(?:DOC|SOL)-[0-9]{4}\b")
 PATRON_CITA = re.compile(r"[\[【(]\s*([FT]\d+(?:\s*[,;]\s*[FT]\d+)*)\s*[\]】)]")
@@ -327,6 +331,9 @@ class ControlCupo:
                     return entrada, esperado
             if limite is not None and ahora + espera > limite - TIEMPO_MINIMO_LLAMADA:
                 raise ErrorTecnico("proveedor_cupo")
+            aviso = AVISO_ESPERA.get()
+            if aviso is not None:
+                aviso(espera)
             await asyncio.sleep(espera)
             esperado += espera
 
@@ -335,6 +342,7 @@ class ControlCupo:
             entrada[1] = tokens
 
 
+AVISO_ESPERA: contextvars.ContextVar = contextvars.ContextVar("aviso_espera", default=None)
 _cupos: dict[tuple[int, int], ControlCupo] = {}
 _candado_cupos = threading.Lock()
 
@@ -346,8 +354,9 @@ def obtener_cupo(tpm: int, rpm: int) -> ControlCupo:
         return _cupos[(tpm, rpm)]
 
 
-def estimar_tokens(mensajes: list[dict], esquema: dict, max_tokens: int) -> int:
-    return len(compacto(mensajes)) // 3 + len(compacto(esquema)) // 3 + max_tokens // 4
+def estimar_tokens(mensajes: list[dict], esquema: dict, etapa: str) -> int:
+    caracteres = len(compacto(mensajes)) + len(compacto(esquema))
+    return math.ceil(caracteres / CARACTERES_POR_TOKEN) + SALIDA_TIPICA.get(etapa, SALIDA_DESCONOCIDA)
 
 
 def codigo_error_proveedor(error: Exception) -> str | None:
@@ -371,7 +380,7 @@ class ClienteGroq:
 
     async def _una_llamada(self, mensajes: list[dict], nombre_esquema: str, esquema: dict, max_tokens: int, limite: float | None) -> tuple[Any, dict]:
         import groq
-        estimado = estimar_tokens(mensajes, esquema, max_tokens)
+        estimado = estimar_tokens(mensajes, esquema, nombre_esquema)
         entrada, espera = await self.cupo.reservar(estimado, limite)
         inicio = time.perf_counter()
         registro = {"etapa": nombre_esquema, "estimado": estimado, "max_completion_tokens": max_tokens, "espera_cupo_ms": round(espera * 1000, 1)}
@@ -812,7 +821,14 @@ class Sistema:
         resultado.herramientas = [{"etiqueta": e, "operacion": v["operacion"], "argumentos": v["argumentos"], "resultado": v["resultado"], "citada": e in citas}
                                   for e, v in catalogo.items() if e.startswith("T")]
 
-    async def atender(self, texto: str, conversacion_id: str, token: str) -> ResultadoAtencion:
+    async def atender(self, texto: str, conversacion_id: str, token: str, al_esperar: Any = None) -> ResultadoAtencion:
+        marca = AVISO_ESPERA.set(al_esperar)
+        try:
+            return await self._atender(texto, conversacion_id, token)
+        finally:
+            AVISO_ESPERA.reset(marca)
+
+    async def _atender(self, texto: str, conversacion_id: str, token: str) -> ResultadoAtencion:
         inicio = time.perf_counter()
         traza = {"modelo": self.configuracion.groq_modelo, "flujo": FLUJO_VERSION, "prompt_rag": PROMPT_RAG_VERSION, "prompt_enrutador": PROMPT_ENRUTADOR_VERSION,
                  "recuperacion_configurada": self.configuracion.recuperacion,

@@ -769,3 +769,73 @@ def test_reintento_repite_siempre_todas_las_reglas_de_citas(configuracion, almac
     for regla in ("cada frase de 'respuesta' lleva al menos una etiqueta [F#]", "dentro del texto de 'respuesta'",
                   "'citas' contiene exactamente las etiquetas escritas", "nunca [T#]", "explica en 'limitacion'"):
         assert regla in contenido
+
+
+def mensajes_rag_tipicos():
+    evidencia = [{"etiqueta": f"F{i + 1}", "fuente": f["metadata"]["source"], "seccion": f["metadata"]["section"], "version": f["metadata"]["version"],
+                  "texto": f["content"]} for i, f in enumerate(list(FRAGMENTOS.values())[:3])]
+    return [{"role": "system", "content": si.PROMPT_RAG},
+            {"role": "user", "content": si.compacto({"pregunta": "¿Qué datos debe traer una factura?", "memoria": [], "evidencia": evidencia})}]
+
+
+def test_estimacion_por_tipo_de_llamada_cercana_al_consumo_medido():
+    mensajes = mensajes_rag_tipicos()
+    estimado = si.estimar_tokens(mensajes, si.ESQUEMA_RAG, "respuesta_rag")
+    assert 1200 <= estimado <= 1900
+    corto = [{"role": "system", "content": si.PROMPT_ENRUTADOR}, {"role": "user", "content": si.compacto({"entrada": "Hola", "memoria": []})}]
+    assert 400 <= si.estimar_tokens(corto, si.ESQUEMA_ENRUTADOR, "enrutador") <= 800
+    assert si.estimar_tokens(corto, si.ESQUEMA_ENRUTADOR, "otra") - si.estimar_tokens(corto, si.ESQUEMA_ENRUTADOR, "enrutador") == si.SALIDA_DESCONOCIDA - 160
+
+
+def test_turno_tipico_no_espera_cuando_hay_cupo_real():
+    reloj = Reloj()
+    cupo = si.ControlCupo(8000, 30, reloj=reloj)
+    previa, _ = asyncio.run(cupo.reservar(3195))
+    mensajes = mensajes_rag_tipicos()
+    primera, espera = asyncio.run(cupo.reservar(si.estimar_tokens(mensajes, si.ESQUEMA_RAG, "respuesta_rag")))
+    assert espera == 0
+    cupo.ajustar(primera, 1450)
+    reloj.ahora += 2
+    segunda = si.estimar_tokens(mensajes, si.ESQUEMA_RAG, "respuesta_rag")
+    assert cupo.segundos_para(segunda) == 0
+    anterior = len(si.compacto(mensajes)) // 3 + len(si.compacto(si.ESQUEMA_RAG)) // 3 + si.MAX_TOKENS_ESTRICTO // 4
+    assert cupo.segundos_para(anterior) > 0
+
+
+def test_aviso_de_espera_del_cupo(monkeypatch):
+    reloj = Reloj()
+    cupo = si.ControlCupo(1000, 30, reloj=reloj)
+    avisos = []
+
+    async def dormir(segundos):
+        reloj.ahora += segundos
+
+    monkeypatch.setattr(si.asyncio, "sleep", dormir)
+
+    async def con_aviso():
+        marca = si.AVISO_ESPERA.set(avisos.append)
+        try:
+            await cupo.reservar(700)
+            await cupo.reservar(500)
+        finally:
+            si.AVISO_ESPERA.reset(marca)
+
+    asyncio.run(con_aviso())
+    assert avisos == [pytest.approx(60)]
+    asyncio.run(cupo.reservar(100))
+    assert len(avisos) == 1
+
+
+def test_atender_entrega_el_aviso_al_control_de_cupo(configuracion, almacen, conversacion):
+    vistos = []
+
+    class LLMQueEspera(LLMGuionado):
+        async def completar(self, *argumentos, **opciones):
+            aviso = si.AVISO_ESPERA.get()
+            if aviso:
+                aviso(12.0)
+            return await super().completar(*argumentos, **opciones)
+
+    sistema = armar(configuracion, almacen, LLMQueEspera(rag=[rag()]))
+    asyncio.run(sistema.atender("¿Qué datos debe traer una factura?", conversacion, "token-a", al_esperar=vistos.append))
+    assert vistos == [12.0] and si.AVISO_ESPERA.get() is None
