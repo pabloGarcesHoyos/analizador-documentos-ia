@@ -251,3 +251,15 @@ def test_obtener_accion_solo_del_propietario(almacen):
         almacen.obtener_accion_informe("token-a", str(uuid.uuid4()))
     with pytest.raises(al.DatosInvalidos):
         almacen.obtener_accion_informe("token-a", "no-es-uuid")
+
+
+def test_guardar_turno_conserva_limitacion_y_detalle(base, almacen):
+    conversacion = almacen.crear_conversacion("token-a", "Presentación")["id"]
+    almacen.guardar_turno("token-a", conversacion, "pregunta", "respuesta", "PARCIAL", limitacion="Falta una parte.", detalle_error="")
+    usuario, asistente = almacen.cargar_mensajes("token-a", conversacion)
+    assert (asistente["limitacion"], asistente["detalle_error"]) == ("Falta una parte.", "")
+    assert (usuario["limitacion"], usuario["detalle_error"]) == ("", "")
+    with pytest.raises(al.DatosInvalidos):
+        almacen.guardar_turno("token-a", conversacion, "pregunta", "respuesta", "PARCIAL", limitacion="x" * (al.MAX_LIMITACION + 1))
+    with pytest.raises(al.DatosInvalidos):
+        almacen.guardar_turno("token-a", conversacion, "pregunta", "respuesta", "ERROR_TECNICO", detalle_error=5)

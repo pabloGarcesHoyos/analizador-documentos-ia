@@ -858,7 +858,7 @@ class Sistema:
             traza["propuesta_informe"] = resultado.propuesta_informe
         try:
             _, guardado = await asyncio.to_thread(self.almacen.guardar_turno, token, conversacion_id, texto, resultado.respuesta, resultado.estado,
-                                                  resultado.fuentes, resultado.herramientas, traza)
+                                                  resultado.fuentes, resultado.herramientas, traza, resultado.limitacion, resultado.detalle_error)
             resultado.mensaje_id, resultado.persistido = guardado["id"], True
         except al.ErrorAlmacenamiento:
             resultado.persistido = False

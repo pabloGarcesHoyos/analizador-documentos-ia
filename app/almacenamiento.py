@@ -19,10 +19,11 @@ MAX_ESTADO = 60
 MAX_DESTINO = 300
 MAX_CONVERSACIONES = 200
 MAX_CORREO, MAX_CLAVE = 320, 200
+MAX_LIMITACION, MAX_DETALLE = 2000, 1000
 TURNOS_CONTEXTO = 4
 PATRON_HUELLA = re.compile(r"^[0-9a-f]{64}$")
 PATRON_URL = re.compile(r"^(https://[^\s/]+|http://(127\.0\.0\.1|localhost)(:\d+)?)/?$")
-COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,creado_en"
+COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,limitacion,detalle_error,creado_en"
 COLUMNAS_CONVERSACION = "id,usuario_id,titulo,creada_en"
 CODIGO_UNICO = "23505"
 CODIGOS_ACCESO = {"42501", "23503", "PGRST301", "PGRST302"}
@@ -98,6 +99,16 @@ def _uuid(valor: Any, nombre: str) -> str:
 def _texto(valor: Any, nombre: str, maximo: int) -> str:
     if not isinstance(valor, str) or not valor.strip():
         raise DatosInvalidos(f"{nombre} no puede estar vacío.")
+    if len(valor) > maximo:
+        raise DatosInvalidos(f"{nombre} supera {maximo} caracteres.")
+    return valor
+
+
+def _texto_opcional(valor: Any, nombre: str, maximo: int) -> str:
+    if valor is None:
+        return ""
+    if not isinstance(valor, str):
+        raise DatosInvalidos(f"{nombre} debe ser texto.")
     if len(valor) > maximo:
         raise DatosInvalidos(f"{nombre} supera {maximo} caracteres.")
     return valor
@@ -220,6 +231,8 @@ class Almacenamiento:
         fuentes: Sequence[Mapping[str, Any]] | None = None,
         herramientas: Sequence[Mapping[str, Any]] | None = None,
         traza: Mapping[str, Any] | None = None,
+        limitacion: str | None = "",
+        detalle_error: str | None = "",
     ) -> tuple[dict, dict]:
         conversacion_id = _uuid(conversacion_id, "La conversación")
         pregunta = _texto(pregunta, "La pregunta", MAX_CONTENIDO)
@@ -228,13 +241,16 @@ class Almacenamiento:
         fuentes = _lista_json(fuentes, "Las fuentes")
         herramientas = _lista_json(herramientas, "Las herramientas")
         traza = _objeto_json(traza, "La traza")
+        limitacion = _texto_opcional(limitacion, "La limitación", MAX_LIMITACION)
+        detalle_error = _texto_opcional(detalle_error, "El detalle del error", MAX_DETALLE)
         cliente, usuario_id = self._abrir(token)
         self._conversacion_propia(cliente, usuario_id, conversacion_id)
         filas = [
             {"conversacion_id": conversacion_id, "usuario_id": usuario_id, "rol": "usuario", "contenido": pregunta,
-             "estado": None, "fuentes": [], "herramientas": [], "traza": None},
+             "estado": None, "fuentes": [], "herramientas": [], "traza": None, "limitacion": "", "detalle_error": ""},
             {"conversacion_id": conversacion_id, "usuario_id": usuario_id, "rol": "asistente", "contenido": respuesta,
-             "estado": estado, "fuentes": fuentes, "herramientas": herramientas, "traza": traza},
+             "estado": estado, "fuentes": fuentes, "herramientas": herramientas, "traza": traza,
+             "limitacion": limitacion, "detalle_error": detalle_error},
         ]
         guardadas = sorted(self._ejecutar(cliente.table("mensajes").insert(filas)), key=lambda f: f["id"])
         if [f.get("rol") for f in guardadas] != list(ROLES):
