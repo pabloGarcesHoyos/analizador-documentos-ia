@@ -368,3 +368,73 @@ def test_datos_del_registro_en_orden_fijo_sin_importar_el_orden_guardado():
     dos = {**base, "resultado": {"codigo_solicitud": "DOC-1001", "fuente": "r", "encontrado": True, "registro": {"monto": "1", "estado": "x", "tipo": "factura"}}}
     assert ap.bloque_herramientas([uno]) == ap.bloque_herramientas([dos])
     assert ap.bloque_herramientas([uno]).index("Estado: x") < ap.bloque_herramientas([uno]).index("Monto: 1")
+
+
+INFORME = "¿Qué datos debe traer una factura? Haz un informe"
+
+
+def proponer_en_vivo(e, sesion=None):
+    sesion = sesion or entrar(e)
+    return sesion, responder(e, sesion, INFORME)
+
+
+def test_propuesta_sin_decidir_se_vuelve_a_ofrecer_al_recargar(entorno):
+    sesion, en_vivo = proponer_en_vivo(entorno)
+    recargada = entorno.interfaz.seleccionar(sesion, en_vivo["conversacion"])
+    assert recargada["chat"] == en_vivo["chat"] and recargada["propuesta"] == en_vivo["propuesta"]
+    assert recargada["informe"]["visible"] and recargada["aprobar"]["interactive"] and recargada["rechazar"]["interactive"]
+    assert recargada["informe_contenido"] == en_vivo["informe_contenido"] and recargada["informe_destino"] == en_vivo["informe_destino"]
+    assert "propuesta de informe sin decidir" in recargada["indicador"]
+    salida = asyncio.run(entorno.interfaz.aprobar(sesion, recargada["propuesta"], recargada["chat"]))
+    assert salida["archivo"]["visible"] and len(entorno.escritor.escrituras) == 1
+
+
+@pytest.mark.parametrize("decision, nota", [("aprobar", "aprobado y escrito"), ("rechazar", "rechazado; no se escribió ningún archivo")])
+def test_decision_registrada_se_muestra_igual_en_vivo_y_al_recargar(entorno, decision, nota):
+    sesion, en_vivo = proponer_en_vivo(entorno)
+    salida = asyncio.run(getattr(entorno.interfaz, decision)(sesion, en_vivo["propuesta"], en_vivo["chat"]))
+    assert salida["chat"][-1] == ap.mensaje_decision(en_vivo["propuesta"]["destino"], {"decision": "aprobada" if decision == "aprobar" else "rechazada",
+                                                                                        "resultado": "ejecutada" if decision == "aprobar" else None})
+    assert nota in salida["chat"][-1]["content"]
+    recargada = entorno.interfaz.seleccionar(sesion, en_vivo["conversacion"])
+    assert recargada["chat"] == salida["chat"] and recargada["propuesta"] is None and not recargada["informe"]["visible"]
+    repetida = asyncio.run(getattr(entorno.interfaz, decision)(sesion, en_vivo["propuesta"], salida["chat"]))
+    assert repetida["chat"] == salida["chat"] and len(entorno.escritor.escrituras) == (1 if decision == "aprobar" else 0)
+
+
+def test_escritura_fallida_se_muestra_al_recargar(entorno):
+    entorno.sistema.escritor = EscritorDisco(error=si.ErrorTecnico("mcp_archivos"))
+    sesion, en_vivo = proponer_en_vivo(entorno)
+    salida = asyncio.run(entorno.interfaz.aprobar(sesion, en_vivo["propuesta"], en_vivo["chat"]))
+    recargada = entorno.interfaz.seleccionar(sesion, en_vivo["conversacion"])
+    assert "la escritura falló y no se reintenta" in recargada["chat"][-1]["content"] and recargada["chat"] == salida["chat"]
+
+
+def test_propuesta_alterada_en_la_base_no_se_ofrece(entorno):
+    sesion, en_vivo = proponer_en_vivo(entorno)
+    fila = next(m for m in entorno.base.tablas["mensajes"] if m.get("propuesta_informe"))
+    fila["propuesta_informe"] = {**fila["propuesta_informe"], "contenido": "contenido cambiado"}
+    recargada = entorno.interfaz.seleccionar(sesion, en_vivo["conversacion"])
+    assert recargada["propuesta"] is None and not recargada["informe"]["visible"]
+
+
+def test_con_dos_propuestas_pendientes_se_ofrece_la_mas_reciente_y_luego_la_otra(entorno):
+    sesion, primera = proponer_en_vivo(entorno)
+    segunda = responder(entorno, sesion, INFORME, primera["conversacion"], primera["chat"])
+    recargada = entorno.interfaz.seleccionar(sesion, primera["conversacion"])
+    assert recargada["propuesta"]["mensaje_id"] == segunda["propuesta"]["mensaje_id"]
+    asyncio.run(entorno.interfaz.rechazar(sesion, recargada["propuesta"], recargada["chat"]))
+    assert entorno.interfaz.seleccionar(sesion, primera["conversacion"])["propuesta"]["mensaje_id"] == primera["propuesta"]["mensaje_id"]
+
+
+def test_la_sesion_renovada_se_devuelve_tambien_en_los_caminos_de_error(entorno):
+    sesion, en_vivo = proponer_en_vivo(entorno)
+    asyncio.run(entorno.interfaz.rechazar(sesion, en_vivo["propuesta"], en_vivo["chat"]))
+    entorno.reloj.ahora += 3600 - 30
+    repetida = asyncio.run(entorno.interfaz.aprobar(sesion, en_vivo["propuesta"], en_vivo["chat"]))
+    assert repetida["sesion"]["access_token"] != sesion["access_token"]
+    entorno.reloj.ahora += 3600 - 30
+    ajena = entorno.almacen.crear_conversacion("token-b", "De B")["id"]
+    denegada = entorno.interfaz.seleccionar(repetida["sesion"], ajena)
+    assert denegada["sesion"]["access_token"] not in (sesion["access_token"], repetida["sesion"]["access_token"])
+    assert denegada["indicador"] == ap.ESTADOS["ACCESO_DENEGADO"]

@@ -38,6 +38,8 @@ OPERACIONES = {"consultar_estado_solicitud": "Consulta de estado en el registro"
 DECISIONES_CLASIFICACION = {"OK_VALIDADO": "documento validado", "OK_PIDE_ACLARACION": "faltan datos o requiere aclaración",
                             "OK_REQUIERE_HUMANO": "requiere revisión humana", "ERROR_FORMATO": "la clasificación no cumplió el formato"}
 CAMPOS_PRIMERO = ("estado", "detalle")
+DECISIONES_INFORME = {("aprobada", "ejecutada"): "aprobado y escrito", ("aprobada", "fallida"): "aprobado, pero la escritura falló y no se reintenta",
+                      ("aprobada", None): "aprobado, sin escritura confirmada", ("rechazada", None): "rechazado; no se escribió ningún archivo"}
 AVISO_INICIO = "Escribe una pregunta para empezar una conversación nueva."
 AVISO_VENCIDA = "La sesión venció y no se pudo renovar. Vuelve a iniciar sesión."
 
@@ -125,6 +127,22 @@ def fila_de_resultado(resultado: si.ResultadoAtencion) -> dict:
             "detalle_error": resultado.detalle_error}
 
 
+def mensaje_decision(destino: str, accion: dict) -> dict:
+    texto = DECISIONES_INFORME.get((accion.get("decision"), accion.get("resultado")), "con una decisión registrada")
+    return {"role": "assistant", "content": f"Informe `{destino}`: {texto}.", "metadata": {"title": "Decisión sobre el informe"}}
+
+
+def panel_propuesta(conversacion_id: str, mensaje_id: int, propuesta: dict) -> dict:
+    contenido = propuesta.get("contenido") or ""
+    if hashlib.sha256(contenido.encode("utf-8")).hexdigest() != propuesta.get("huella_contenido"):
+        return {}
+    return {"propuesta": {"conversacion_id": conversacion_id, "mensaje_id": mensaje_id, "destino": propuesta["destino"], "contenido": contenido,
+                          "huella": propuesta["huella_contenido"]},
+            "informe": gr.update(visible=True), "archivo": gr.update(visible=False, value=None), "aviso_informe": "",
+            "informe_destino": f"Destino: `{propuesta['destino']}`, en la carpeta de informes de tu usuario. Revisa el contenido completo antes de decidir.",
+            "informe_contenido": contenido, "aprobar": gr.update(interactive=True), "rechazar": gr.update(interactive=True)}
+
+
 def _oculto() -> dict:
     return gr.update(visible=False)
 
@@ -190,16 +208,30 @@ class Interfaz:
         try:
             sesion = self._vigente(sesion)
             filas = self.almacen.cargar_mensajes(sesion["access_token"], conversacion_id)
+            decisiones = self.almacen.decisiones_informe(sesion["access_token"], conversacion_id)
         except al.SesionInvalida:
             return vista_inicio(AVISO_VENCIDA)
         except (al.AccesoDenegado, al.DatosInvalidos):
-            return {"conversacion": None, "chat": [], "lista": gr.update(value=None), "indicador": ESTADOS["ACCESO_DENEGADO"], **_informe_oculto()}
+            return {"sesion": sesion, "conversacion": None, "chat": [], "lista": gr.update(value=None), "indicador": ESTADOS["ACCESO_DENEGADO"],
+                    **_informe_oculto()}
         except al.ErrorAlmacenamiento:
-            return {"indicador": "No se pudo cargar el historial por un error técnico; intenta de nuevo."}
-        chat = [mensaje for fila in filas for mensaje in mensajes_de_fila(fila)]
+            return {"sesion": sesion, "indicador": "No se pudo cargar el historial por un error técnico; intenta de nuevo."}
+        chat, pendiente = [], None
+        for fila in filas:
+            chat += mensajes_de_fila(fila)
+            propuesta = fila.get("propuesta_informe") if fila.get("rol") == "asistente" else None
+            if propuesta and fila["id"] in decisiones:
+                chat.append(mensaje_decision(propuesta["destino"], decisiones[fila["id"]]))
+            elif propuesta:
+                pendiente = (fila["id"], propuesta)
         ultimo = next((f.get("estado") for f in reversed(filas) if f.get("rol") == "asistente"), None)
         indicador = f"Conversación cargada. Última respuesta: {texto_estado(ultimo)}" if ultimo else "Conversación cargada, todavía sin mensajes."
-        return {"sesion": sesion, "conversacion": conversacion_id, "chat": chat, "indicador": indicador, **_informe_oculto()}
+        salida = {"sesion": sesion, "conversacion": conversacion_id, "chat": chat, "indicador": indicador, **_informe_oculto()}
+        panel = panel_propuesta(conversacion_id, pendiente[0], pendiente[1]) if pendiente else {}
+        if panel:
+            salida.update(panel)
+            salida["indicador"] += " Hay una propuesta de informe sin decidir."
+        return salida
 
     def bloquear(self, texto: str, chat: list[dict]) -> dict:
         if not (texto or "").strip():
@@ -221,7 +253,7 @@ class Interfaz:
         except al.SesionInvalida:
             return vista_inicio(AVISO_VENCIDA)
         except al.ErrorAlmacenamiento:
-            return {"chat": list(chat or [])[:-1], "indicador": "No se pudo crear la conversación por un error técnico; intenta de nuevo."}
+            return {"sesion": sesion, "chat": list(chat or [])[:-1], "indicador": "No se pudo crear la conversación por un error técnico; intenta de nuevo."}
         resultado = await self.sistema.atender(texto, conversacion, token)
         if resultado.estado == "SESION_INVALIDA":
             return vista_inicio(AVISO_VENCIDA)
@@ -239,25 +271,20 @@ class Interfaz:
             salida["lista"] = gr.update(choices=opciones_lista(conversaciones), value=conversacion)
         except al.ErrorAlmacenamiento:
             pass
-        propuesta = resultado.propuesta_informe
-        if propuesta and resultado.persistido and resultado.mensaje_id:
-            salida.update({"propuesta": {"conversacion_id": conversacion, "mensaje_id": resultado.mensaje_id, "destino": propuesta["destino"],
-                                         "contenido": propuesta["contenido"], "huella": propuesta["huella_contenido"]},
-                           "informe": gr.update(visible=True),
-                           "informe_destino": f"Destino: `{propuesta['destino']}`, en la carpeta de informes de tu usuario. Revisa el contenido completo antes de decidir.",
-                           "informe_contenido": propuesta["contenido"], "aprobar": gr.update(interactive=True), "rechazar": gr.update(interactive=True)})
+        if resultado.propuesta_informe and resultado.persistido and resultado.mensaje_id:
+            salida.update(panel_propuesta(conversacion, resultado.mensaje_id, resultado.propuesta_informe))
         return salida
 
     def bloquear_informe(self) -> dict:
         return {"aprobar": gr.update(interactive=False), "rechazar": gr.update(interactive=False)}
 
-    async def aprobar(self, sesion: dict | None, propuesta: dict | None) -> dict:
-        return await self._decidir(sesion, propuesta, "aprobada")
+    async def aprobar(self, sesion: dict | None, propuesta: dict | None, chat: list[dict] | None = None) -> dict:
+        return await self._decidir(sesion, propuesta, "aprobada", chat)
 
-    async def rechazar(self, sesion: dict | None, propuesta: dict | None) -> dict:
-        return await self._decidir(sesion, propuesta, "rechazada")
+    async def rechazar(self, sesion: dict | None, propuesta: dict | None, chat: list[dict] | None = None) -> dict:
+        return await self._decidir(sesion, propuesta, "rechazada", chat)
 
-    async def _decidir(self, sesion: dict | None, propuesta: dict | None, decision: str) -> dict:
+    async def _decidir(self, sesion: dict | None, propuesta: dict | None, decision: str, chat: list[dict] | None) -> dict:
         if not propuesta:
             return {"aviso_informe": "Esta propuesta ya fue atendida; no se repite la acción."}
         clave = (propuesta["conversacion_id"], propuesta["mensaje_id"])
@@ -265,9 +292,23 @@ class Interfaz:
             return {"aviso_informe": "La decisión sobre este informe ya está en curso; no se repite."}
         self._decisiones_en_curso.add(clave)
         try:
-            return await self._ejecutar_decision(sesion, propuesta, decision)
+            salida = await self._ejecutar_decision(sesion, propuesta, decision)
+            if salida.get("propuesta", propuesta) is None and salida.get("sesion", sesion):
+                await self._anotar_decision(salida, salida.get("sesion") or sesion, propuesta, chat)
+            return salida
         finally:
             self._decisiones_en_curso.discard(clave)
+
+    async def _anotar_decision(self, salida: dict, sesion: dict, propuesta: dict, chat: list[dict] | None) -> None:
+        if chat is None:
+            return
+        try:
+            decisiones = await asyncio.to_thread(self.almacen.decisiones_informe, sesion["access_token"], propuesta["conversacion_id"])
+        except al.ErrorAlmacenamiento:
+            return
+        if propuesta["mensaje_id"] in decisiones:
+            nota = mensaje_decision(propuesta["destino"], decisiones[propuesta["mensaje_id"]])
+            salida["chat"] = _quitar_nota(list(chat), nota) + [nota]
 
     async def _ejecutar_decision(self, sesion: dict | None, propuesta: dict, decision: str) -> dict:
         try:
@@ -278,9 +319,9 @@ class Interfaz:
         except al.SesionInvalida:
             return vista_inicio(AVISO_VENCIDA)
         except al.AccionYaRegistrada:
-            return {"propuesta": None, "aviso_informe": "La decisión sobre este informe ya estaba registrada; no se repite."}
+            return {"sesion": sesion, "propuesta": None, "aviso_informe": "La decisión sobre este informe ya estaba registrada; no se repite."}
         except al.ErrorAlmacenamiento:
-            return {"aviso_informe": "No se pudo registrar la decisión por un error técnico. No se escribió nada; puedes intentarlo de nuevo.",
+            return {"sesion": sesion, "aviso_informe": "No se pudo registrar la decisión por un error técnico. No se escribió nada; puedes intentarlo de nuevo.",
                     "aprobar": gr.update(interactive=True), "rechazar": gr.update(interactive=True)}
         if decision == "rechazada":
             return {"sesion": sesion, "propuesta": None, "aviso_informe": "Rechazo registrado. No se escribió ningún archivo."}
@@ -303,6 +344,10 @@ class Interfaz:
         descarga.write_bytes(datos)
         return {"sesion": sesion, "propuesta": None, "archivo": gr.update(visible=True, value=str(descarga)),
                 "aviso_informe": "Informe aprobado, escrito y verificado. Descárgalo ahora: el servidor no guarda los informes de forma permanente."}
+
+
+def _quitar_nota(chat: list[dict], nota: dict) -> list[dict]:
+    return chat[:-1] if chat and chat[-1] == nota else chat
 
 
 def _mapear(resultado: dict, componentes: dict) -> dict:
@@ -360,7 +405,7 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
         c["salir"].click(_envolver(interfaz.salir, c), [c["sesion"]], todo, **privado)
         c["nueva"].click(_envolver(interfaz.nueva, c), None, [c["conversacion"], c["chat"], c["lista"], c["indicador"], c["propuesta"], c["informe"],
                                                             c["archivo"], c["aviso_informe"]], queue=False, **privado)
-        c["lista"].input(_envolver(interfaz.seleccionar, c), [c["sesion"], c["lista"]], todo, concurrency_limit=CONCURRENCIA_GENERAL, **privado)
+        c["lista"].input(_envolver(interfaz.seleccionar, c), [c["sesion"], c["lista"]], todo + informe_salidas, concurrency_limit=CONCURRENCIA_GENERAL, **privado)
         for disparador in (c["enviar"].click, c["entrada"].submit):
             (disparador(_envolver(interfaz.bloquear, c), [c["entrada"], c["chat"]], controles + [c["chat"], c["indicador"]], queue=False, **privado)
              .then(_envolver(interfaz.responder, c), [c["sesion"], c["conversacion"], c["entrada"], c["chat"]], todo + [c["entrada"]] + informe_salidas,
@@ -368,7 +413,7 @@ def construir(interfaz: Interfaz) -> gr.Blocks:
              .then(_envolver(interfaz.desbloquear, c), None, controles, queue=False, **privado))
         for boton, manejador in ((c["aprobar"], interfaz.aprobar), (c["rechazar"], interfaz.rechazar)):
             (boton.click(_envolver(interfaz.bloquear_informe, c), None, [c["aprobar"], c["rechazar"]], queue=False, **privado)
-             .then(_envolver(manejador, c), [c["sesion"], c["propuesta"]], todo + [c["aprobar"], c["rechazar"]],
+             .then(_envolver(manejador, c), [c["sesion"], c["propuesta"], c["chat"]], todo + [c["aprobar"], c["rechazar"]],
                    concurrency_limit=CONCURRENCIA_ATENCION, concurrency_id="atencion", **privado))
     return demo
 
