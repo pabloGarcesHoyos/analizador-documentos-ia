@@ -8,6 +8,7 @@ import almacenamiento as al
 import app as ap
 import sistema as si
 from test_integracion_supabase import _entorno
+from test_app import EscritorDisco
 from test_sistema import LLMGuionado, MCPFalso, RecuperadorFalso, rag
 
 pytestmark = pytest.mark.integracion
@@ -84,3 +85,26 @@ def test_conversacion_recargada_se_ve_igual_que_en_vivo(entorno, interfaz, tmp_p
     recargada = vista.seleccionar(sesion, en_vivo["conversacion"])
     assert recargada["chat"] == en_vivo["chat"]
     vista.salir(sesion)
+
+
+@pytest.mark.parametrize("decision, nota", [("aprobar", "aprobado y escrito"), ("rechazar", "rechazado")])
+def test_propuesta_pendiente_se_ofrece_al_recargar_y_la_decision_queda_visible(entorno, interfaz, tmp_path, decision, nota):
+    configuracion = si.ConfiguracionSistema(al.ConfiguracionSupabase.desde_entorno(entorno), "sin-uso", "corpus", str(uuid.uuid4()),
+                                            carpeta_informes=tmp_path, max_segundos=30)
+    escritor = EscritorDisco()
+    sistema = si.Sistema(configuracion, almacen=interfaz.almacen, recuperador=RecuperadorFalso(), llm=LLMGuionado(rag=[rag()]),
+                         mcp_estado=MCPFalso(), escritor=escritor, fabrica_fuente=lambda token: "fuente")
+    vista = ap.Interfaz(interfaz.autenticacion, interfaz.almacen, sistema)
+    sesion = vista.entrar(entorno["PRUEBA_A_EMAIL"], entorno["PRUEBA_A_PASSWORD"])["sesion"]
+    en_vivo = asyncio.run(vista.responder(sesion, None, "¿Qué datos debe traer una factura? Haz un informe", []))
+    assert en_vivo["propuesta"]
+    recargada = vista.seleccionar(sesion, en_vivo["conversacion"])
+    assert recargada["propuesta"] == en_vivo["propuesta"] and recargada["chat"] == en_vivo["chat"] and recargada["aprobar"]["interactive"]
+    ajena = vista.entrar(entorno["PRUEBA_B_EMAIL"], entorno["PRUEBA_B_PASSWORD"])["sesion"]
+    assert vista.seleccionar(ajena, en_vivo["conversacion"]).get("propuesta") is None
+    salida = asyncio.run(getattr(vista, decision)(recargada["sesion"], recargada["propuesta"], recargada["chat"]))
+    assert nota in salida["chat"][-1]["content"] and len(escritor.escrituras) == (1 if decision == "aprobar" else 0)
+    final = vista.seleccionar(salida.get("sesion") or recargada["sesion"], en_vivo["conversacion"])
+    assert final["chat"] == salida["chat"] and final["propuesta"] is None
+    vista.salir(final["sesion"])
+    vista.salir(ajena)
