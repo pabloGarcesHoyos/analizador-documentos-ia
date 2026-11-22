@@ -66,6 +66,8 @@ CABECERA = """<script>
     return valor;
   };
   const ajustar = () => {
+    if (document.documentElement.lang !== "es") document.documentElement.lang = "es";
+    document.querySelectorAll('[data-testid="status-tracker"]').forEach((elemento) => elemento.remove());
     for (const atributo of ["aria-label", "title"]) {
       document.querySelectorAll("[" + atributo + "]").forEach((elemento) => {
         const actual = elemento.getAttribute(atributo);
