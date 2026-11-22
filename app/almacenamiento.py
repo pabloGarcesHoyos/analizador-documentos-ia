@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import time
@@ -22,8 +23,9 @@ MAX_CORREO, MAX_CLAVE = 320, 200
 MAX_LIMITACION, MAX_DETALLE = 2000, 1000
 TURNOS_CONTEXTO = 4
 PATRON_HUELLA = re.compile(r"^[0-9a-f]{64}$")
+PATRON_DESTINO = re.compile(r"^informe_[0-9a-f]{12}\.md$")
 PATRON_URL = re.compile(r"^(https://[^\s/]+|http://(127\.0\.0\.1|localhost)(:\d+)?)/?$")
-COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,limitacion,detalle_error,creado_en"
+COLUMNAS_MENSAJE = "id,conversacion_id,rol,contenido,estado,fuentes,herramientas,limitacion,detalle_error,propuesta_informe,creado_en"
 COLUMNAS_CONVERSACION = "id,usuario_id,titulo,creada_en"
 CODIGO_UNICO = "23505"
 CODIGOS_ACCESO = {"42501", "23503", "PGRST301", "PGRST302"}
@@ -112,6 +114,20 @@ def _texto_opcional(valor: Any, nombre: str, maximo: int) -> str:
     if len(valor) > maximo:
         raise DatosInvalidos(f"{nombre} supera {maximo} caracteres.")
     return valor
+
+
+def _propuesta(valor: Any) -> dict | None:
+    if valor is None:
+        return None
+    if not isinstance(valor, Mapping):
+        raise DatosInvalidos("La propuesta de informe debe ser un objeto.")
+    contenido, huella, destino = valor.get("contenido"), valor.get("huella_contenido"), valor.get("destino")
+    _texto(contenido, "El contenido del informe", MAX_CONTENIDO)
+    if not isinstance(huella, str) or hashlib.sha256(contenido.encode("utf-8")).hexdigest() != huella:
+        raise DatosInvalidos("La huella no corresponde al contenido del informe.")
+    if not isinstance(destino, str) or not PATRON_DESTINO.match(destino):
+        raise DatosInvalidos("El destino del informe no es válido.")
+    return {"contenido": contenido, "huella_contenido": huella, "destino": destino}
 
 
 def _lista_json(valor: Any, nombre: str) -> list:
@@ -233,6 +249,7 @@ class Almacenamiento:
         traza: Mapping[str, Any] | None = None,
         limitacion: str | None = "",
         detalle_error: str | None = "",
+        propuesta_informe: Mapping[str, Any] | None = None,
     ) -> tuple[dict, dict]:
         conversacion_id = _uuid(conversacion_id, "La conversación")
         pregunta = _texto(pregunta, "La pregunta", MAX_CONTENIDO)
@@ -243,14 +260,16 @@ class Almacenamiento:
         traza = _objeto_json(traza, "La traza")
         limitacion = _texto_opcional(limitacion, "La limitación", MAX_LIMITACION)
         detalle_error = _texto_opcional(detalle_error, "El detalle del error", MAX_DETALLE)
+        propuesta_informe = _propuesta(propuesta_informe)
         cliente, usuario_id = self._abrir(token)
         self._conversacion_propia(cliente, usuario_id, conversacion_id)
         filas = [
             {"conversacion_id": conversacion_id, "usuario_id": usuario_id, "rol": "usuario", "contenido": pregunta,
-             "estado": None, "fuentes": [], "herramientas": [], "traza": None, "limitacion": "", "detalle_error": ""},
+             "estado": None, "fuentes": [], "herramientas": [], "traza": None, "limitacion": "", "detalle_error": "",
+             "propuesta_informe": None},
             {"conversacion_id": conversacion_id, "usuario_id": usuario_id, "rol": "asistente", "contenido": respuesta,
              "estado": estado, "fuentes": fuentes, "herramientas": herramientas, "traza": traza,
-             "limitacion": limitacion, "detalle_error": detalle_error},
+             "limitacion": limitacion, "detalle_error": detalle_error, "propuesta_informe": propuesta_informe},
         ]
         guardadas = sorted(self._ejecutar(cliente.table("mensajes").insert(filas)), key=lambda f: f["id"])
         if [f.get("rol") for f in guardadas] != list(ROLES):
@@ -302,6 +321,16 @@ class Almacenamiento:
         if not filas or filas[0].get("usuario_id") != usuario_id:
             raise AccesoDenegado("La acción no existe o no pertenece al usuario.")
         return filas[0]
+
+    def decisiones_informe(self, token: str, conversacion_id: str) -> dict[int, dict]:
+        conversacion_id = _uuid(conversacion_id, "La conversación")
+        cliente, usuario_id = self._abrir(token)
+        self._conversacion_propia(cliente, usuario_id, conversacion_id)
+        filas = self._ejecutar(
+            cliente.table("acciones_informe").select("id,mensaje_id,usuario_id,decision,resultado,destino")
+            .eq("conversacion_id", conversacion_id).eq("usuario_id", usuario_id)
+        )
+        return {f["mensaje_id"]: f for f in filas if f.get("usuario_id") == usuario_id}
 
     def registrar_resultado_informe(self, token: str, accion_id: str, resultado: str) -> dict:
         accion_id = _uuid(accion_id, "La acción")

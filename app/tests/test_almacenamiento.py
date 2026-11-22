@@ -263,3 +263,30 @@ def test_guardar_turno_conserva_limitacion_y_detalle(base, almacen):
         almacen.guardar_turno("token-a", conversacion, "pregunta", "respuesta", "PARCIAL", limitacion="x" * (al.MAX_LIMITACION + 1))
     with pytest.raises(al.DatosInvalidos):
         almacen.guardar_turno("token-a", conversacion, "pregunta", "respuesta", "ERROR_TECNICO", detalle_error=5)
+
+
+def propuesta_valida(contenido="# Informe\n"):
+    return {"contenido": contenido, "huella_contenido": hashlib.sha256(contenido.encode("utf-8")).hexdigest(), "destino": "informe_0123456789ab.md",
+            "citas": ["F1"]}
+
+
+def test_propuesta_de_informe_se_guarda_validada(base, almacen):
+    conversacion = almacen.crear_conversacion("token-a", "Informe")["id"]
+    _, asistente = almacen.guardar_turno("token-a", conversacion, "pide informe", "respuesta", "PROPUESTA_INFORME", propuesta_informe=propuesta_valida())
+    guardado = almacen.cargar_mensajes("token-a", conversacion)[1]
+    assert guardado["propuesta_informe"] == {k: v for k, v in propuesta_valida().items() if k != "citas"} and guardado["id"] == asistente["id"]
+    assert almacen.cargar_mensajes("token-a", conversacion)[0]["propuesta_informe"] is None
+    for mala in ({**propuesta_valida(), "huella_contenido": "0" * 64}, {**propuesta_valida(), "destino": "../fuera.md"}, "texto", {"contenido": ""}):
+        with pytest.raises(al.DatosInvalidos):
+            almacen.guardar_turno("token-a", conversacion, "pide informe", "respuesta", "PROPUESTA_INFORME", propuesta_informe=mala)
+
+
+def test_decisiones_de_informe_por_conversacion_y_solo_propias(base, almacen):
+    conversacion = almacen.crear_conversacion("token-a", "Informe")["id"]
+    _, asistente = almacen.guardar_turno("token-a", conversacion, "pide informe", "respuesta", "PROPUESTA_INFORME", propuesta_informe=propuesta_valida())
+    assert almacen.decisiones_informe("token-a", conversacion) == {}
+    almacen.registrar_decision_informe("token-a", conversacion, asistente["id"], "rechazada", "informe_0123456789ab.md", propuesta_valida()["huella_contenido"])
+    decisiones = almacen.decisiones_informe("token-a", conversacion)
+    assert list(decisiones) == [asistente["id"]] and decisiones[asistente["id"]]["decision"] == "rechazada"
+    with pytest.raises(al.AccesoDenegado):
+        almacen.decisiones_informe("token-b", conversacion)
