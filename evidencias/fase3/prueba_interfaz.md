@@ -1,14 +1,62 @@
 # Fase 3: prueba de la interfaz en el navegador
 
-Fecha: 2026-11-22 19:37 UTC. Commit: `cbb2117`. URL: http://127.0.0.1:7860. Navegador: Chromium con Playwright 1.64.1, idioma es-ES.
+Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la aplicación corriendo. Las credenciales se leen de `app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión y la caja de correo se cubren con un recuadro gris; antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave.
+
+## Corrida 2 (vigente)
+
+Fecha: 2026-11-22 20:10 UTC. Commit: `baa5372`. URL: http://127.0.0.1:7860. Navegador: Chromium (Playwright 1.64.1), idioma es-ES.
+
+Resultado: 10 de 15 pasos aprobados.
+
+Después de corregir los cuatro problemas de la corrida 1, el paso 2 del script, el control de cupo y la carpeta de informes. El flujo principal usa un usuario de demostración; A y B se usan para el aislamiento.
+
+### Pasos
+
+| Paso | Esperado | Observado | Capturas | Tiempo (s) | Estado |
+|---|---|---|---|---|---|
+| 1. Login del usuario de demostración con contraseña incorrecta | Aviso claro y caja de contraseña vacía. | Aviso: "No se pudo iniciar sesión: revisa el correo y la contraseña.". Caja de contraseña vacía: sí. | [01_login_contrasena_incorrecta.png](capturas_v2/01_login_contrasena_incorrecta.png) | 1.6 | aprobado |
+| 2. Login correcto del usuario de demostración | Entra a la aplicación y la contraseña no queda en la caja. | Entra a la vista de conversaciones en 2824 ms; la caja ya no está en la página. | [02_login_correcto.png](capturas_v2/02_login_correcto.png) | 2.9 | aprobado |
+| 3. Consulta de estado de DOC-1001 | Frase con [T1], bloque de consultas e indicador Respondida. | 4150 ms. Indicador: "Respondida con evidencia de los documentos.". Respuesta: Respondida con evidencia de los documentos.  El documento DOC-1001 figura en el registro registro_sistema_documental_v1 con estado verificado_y_contabilizado [T1].  Consultas: [T1]  [T1] Consulta de estado en el registro  Código consultado: DOC-1001 Registro: registro_sistema_documental_v1 Encontrado: sí Estado: verificado_y_contabilizado Emisor: TechCorp S.A. Fecha proceso: 2026-08-12 Monto: $1,5 | [03_estado_doc_1001.png](capturas_v2/03_estado_doc_1001.png) | 4.8 | aprobado |
+| 4. Pregunta mixta de requisitos y estado | Fuentes con documento, sección y pasaje, más [T1]. | 7511 ms. Indicador: "Error de validación: la respuesta generada no superó el control de citas y no se muestra.". Respuesta: Error de validación: la respuesta generada no superó el control de citas y no se muestra.  La respuesta generada no superó la validación de contrato y citas; no se muestra texto sin validar. | [05_mixta_fuentes_y_consulta.png](capturas_v2/05_mixta_fuentes_y_consulta.png) | 8.1 | fallido |
+| 5. Seguimiento sin código | Pide el código DOC-XXXX o SOL-XXXX. | 6459 ms. Indicador: "Se necesita una aclaración para continuar.". Respuesta: Se necesita una aclaración para continuar.  Para consultar el estado necesito el código del documento o de la solicitud, con formato DOC-XXXX o SOL-XXXX. | [06_pide_codigo.png](capturas_v2/06_pide_codigo.png) | 7.0 | aprobado |
+| 6. Pedido de eliminar un documento | Rechazo: el analizador solo consulta. | 7980 ms. Indicador: "Solicitud rechazada: el analizador solo consulta información.". Respuesta: Solicitud rechazada: el analizador solo consulta información.  No puedo registrar, aprobar, firmar, modificar, cancelar ni eliminar documentos o solicitudes: el analizador solo consulta información. Esa petición se remite a revisión humana. | [07_rechazo_eliminar.png](capturas_v2/07_rechazo_eliminar.png) | 8.6 | aprobado |
+| 7. Saludo | Se presenta como el Analizador de Documentos, sin términos internos. | 7735 ms. Indicador: "Se necesita una aclaración para continuar.". Respuesta: Se necesita una aclaración para continuar.  Hola, soy el Analizador de Documentos. Puedo ayudarte con preguntas sobre políticas de facturación, contratos, documentos de identificación, o el estado de documentos DOC-XXXX y solicitudes SOL-XXXX. ¿En qué puedo asistirte?. Términos internos: ninguno | [08_saludo.png](capturas_v2/08_saludo.png) | 8.3 | aprobado |
+| 8. Bloqueo mientras atiende | Entrada, botones y lista desactivados durante la espera. | Durante la espera del paso 4: entrada desactivada True, botones desactivados {'Enviar': True, 'Nueva conversación': True, 'Cerrar sesión': True}, lista de conversaciones desactivada True, indicador "Procesando tu consulta…". | [04_entrada_bloqueada_mientras_atiende.png](capturas_v2/04_entrada_bloqueada_mientras_atiende.png) | 0.0 | aprobado |
+| 9. Propuesta de informe y regreso a la conversación | Contenido completo y destino; al volver reaparecen Aprobar y Rechazar. | 34052 ms. Indicador: "Conversación cargada. Hay una propuesta de informe que espera tu aprobación.". Destino informe_5c9f59c3da0a.md; contenido de 1180 caracteres. Panel oculto en otra conversación: False. Al volver reaparecen Aprobar y Rechazar: True; mismo contenido y destino: True. | [10_propuesta_de_informe.png](capturas_v2/10_propuesta_de_informe.png) [11_otra_conversacion_sin_panel.png](capturas_v2/11_otra_conversacion_sin_panel.png) [12_propuesta_reaparece_al_volver.png](capturas_v2/12_propuesta_reaparece_al_volver.png) | 39.9 | fallido |
+| 10. Doble clic en Aprobar | Un solo archivo descargable, igual a lo mostrado; una sola decisión registrada. | Enlaces de descarga: 1. Contenido descargado igual al mostrado: True (SHA-256 7a2b3b76eee1). Decisiones registradas en Supabase: [('aprobada', 'ejecutada')]. | [13_aprobado_un_solo_archivo.png](capturas_v2/13_aprobado_un_solo_archivo.png) | 9.8 | aprobado |
+| 11. Otra propuesta y Rechazar | Rechazo registrado y ningún archivo. | 7448 ms. Panel visible: True. Aviso de rechazo registrado; enlaces de descarga visibles: 0. | [14_propuesta_rechazada.png](capturas_v2/14_propuesta_rechazada.png) | 10.4 | aprobado |
+| 12. Reabrir las conversaciones decididas | Se ve la decisión y no hay botones. | Aprobada: nota presente True, sin botones True. Rechazada: nota presente False, sin botones True. | [15_decision_aprobada_al_reabrir.png](capturas_v2/15_decision_aprobada_al_reabrir.png) [16_decision_rechazada_al_reabrir.png](capturas_v2/16_decision_rechazada_al_reabrir.png) | 5.2 | fallido |
+| 13. Cambio entre conversaciones y recarga de la página | Pide login y todo se ve idéntico: estado, limitación, fuentes y consultas. | Pide login tras recargar: True. Mixta idéntica: False. Estado idéntica: False. La respuesta mixta no incluye limitación. | [17_antes_de_recargar.png](capturas_v2/17_antes_de_recargar.png) [18_recarga_pide_login.png](capturas_v2/18_recarga_pide_login.png) [19_mixta_tras_recargar.png](capturas_v2/19_mixta_tras_recargar.png) | 11.7 | fallido |
+| 14. B en otro contexto al mismo tiempo que A | B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL. | A y B con sesión al mismo tiempo en contextos separados. Conversaciones de A o del usuario de demostración en la lista completa de B: 0 de 171. Por URL con el UUID de una conversación de A: sin acceso True. La interfaz no tiene campo que acepte un UUID. POST /gradio_api/queue/join al evento de selección con ese UUID y sin sesión: HTTP 400, {"detail":"\"Value: '0091dfeb-4886-496e-bb9f-f2cb483b99ee' (type: <class 'str'>). | [20_a_en_su_contexto.png](capturas_v2/20_a_en_su_contexto.png) [21_b_sin_conversaciones_de_a.png](capturas_v2/21_b_sin_conversaciones_de_a.png) [22_b_url_con_uuid_de_a.png](capturas_v2/22_b_url_con_uuid_de_a.png) | 5.0 | fallido |
+| 15. Cerrar sesión en todos los contextos | No queda nada visible y Atrás no reutiliza la sesión. | demo: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; A: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; B: sin datos visibles tras cerrar True; Atrás llevó a app y muestra el inicio de sesión sin datos True. | [24_cierre_de_sesion_demo.png](capturas_v2/24_cierre_de_sesion_demo.png) [25_atras_tras_cerrar_demo.png](capturas_v2/25_atras_tras_cerrar_demo.png) [26_cierre_de_sesion_a.png](capturas_v2/26_cierre_de_sesion_a.png) [27_atras_tras_cerrar_a.png](capturas_v2/27_atras_tras_cerrar_a.png) [28_cierre_de_sesion_b.png](capturas_v2/28_cierre_de_sesion_b.png) [29_atras_tras_cerrar_b.png](capturas_v2/29_atras_tras_cerrar_b.png) | 17.8 | aprobado |
+
+### Revisiones adicionales
+
+| Revisión | Observado | Capturas | Estado |
+|---|---|---|---|
+| Texto visible en inglés | Palabras encontradas: ['Error', 'processing']. | sin captura | fallido |
+| Etiquetas de accesibilidad y textos emergentes en inglés | Palabras encontradas: ['Error']. | sin captura | fallido |
+| Términos internos en el texto visible | Encontrados: ninguno. | sin captura | aprobado |
+| Emojis en el texto visible | Encontrados: 0. | sin captura | aprobado |
+| Errores en la consola del navegador | 0 errores y 0 advertencias: [] | sin captura | aprobado |
+| Respuestas HTTP 4xx o 5xx | 0: [] | sin captura | aprobado |
+| Contraseñas o tokens en HTML, localStorage, sessionStorage y cookies | demostración: nada; A: nada; B: nada. | sin captura | aprobado |
+| API de Gradio cerrada | GET /gradio_api/info: HTTP 404, {"detail":"No disponible."}. POST /gradio_api/call/entrar: HTTP 404, {"detail":"No disponible."}. POST /gradio_api/run/predict: HTTP 404. La cola sin sesión se revisa en el paso 14. | sin captura | aprobado |
+| Aviso propio de espera de cupo | Observado en: ¿Qué datos debe traer una factura? Haz un informe: 09_aviso_esperando_cupo.png | [09_aviso_esperando_cupo.png](capturas_v2/09_aviso_esperando_cupo.png) | informativo |
+| Tiempo de cada respuesta | "¿En qué estado está DOC-1001?": 4150 ms; "¿Qué requisitos tiene una factura y en qué estado está DOC-1001?": 7511 ms; "¿Cómo va la revisión de mi documento?": 6459 ms; "Elimina el documento DOC-1001": 7980 ms; "Hola": 7735 ms; "¿Qué datos debe traer una factura? Haz un informe": 34052 ms; "¿Qué datos debe traer una factura? Haz un informe": 7448 ms. | sin captura | informativo |
+| Lista de 20 conversaciones con Ver más | A tiene 164 conversaciones. Al entrar se muestran 20 y Ver más está visible: True. Tras Ver más se muestran 40. | [23_ver_mas_con_muchas_conversaciones.png](capturas_v2/23_ver_mas_con_muchas_conversaciones.png) | aprobado |
+| Vista escritorio_1366x768 | Desborde horizontal en login: False; en conversación: False. Panel de conversaciones cerrado al entrar: False. Chat visible sin desplazarse: True. | [30_vista_escritorio_1366x768_login.png](capturas_v2/30_vista_escritorio_1366x768_login.png) [31_vista_escritorio_1366x768_al_entrar.png](capturas_v2/31_vista_escritorio_1366x768_al_entrar.png) [32_vista_escritorio_1366x768_panel_abierto.png](capturas_v2/32_vista_escritorio_1366x768_panel_abierto.png) [33_vista_escritorio_1366x768_conversacion.png](capturas_v2/33_vista_escritorio_1366x768_conversacion.png) | aprobado |
+| Vista celular_390x844 | Desborde horizontal en login: False; en conversación: False. Panel de conversaciones cerrado al entrar: True. Chat visible sin desplazarse: True. | [34_vista_celular_390x844_login.png](capturas_v2/34_vista_celular_390x844_login.png) [35_vista_celular_390x844_al_entrar.png](capturas_v2/35_vista_celular_390x844_al_entrar.png) [36_vista_celular_390x844_panel_abierto.png](capturas_v2/36_vista_celular_390x844_panel_abierto.png) [37_vista_celular_390x844_conversacion.png](capturas_v2/37_vista_celular_390x844_conversacion.png) | aprobado |
+
+## Corrida 1
+
+Fecha: 2026-11-22 19:37 UTC. Commit: `cbb2117`. URL: http://127.0.0.1:7860. Navegador: Chromium (Playwright 1.64.1), idioma es-ES.
 
 Resultado: 14 de 15 pasos aprobados.
 
-Las credenciales se leen de `app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión y la caja de correo se cubren con un recuadro gris; antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave.
+Se conserva sin cambios. El paso 2 falló por un defecto del script (leía la caja de contraseña después de que Gradio la ocultara), no de la aplicación.
 
-Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la aplicación corriendo.
-
-## Pasos
+### Pasos
 
 | Paso | Esperado | Observado | Capturas | Tiempo (s) | Estado |
 |---|---|---|---|---|---|
@@ -28,7 +76,7 @@ Comando: `python app/tests/e2e/prueba_interfaz.py http://127.0.0.1:7860` con la 
 | 14. B en otro contexto al mismo tiempo que A | B no ve nada de A y no puede cargar una conversación de A por la interfaz ni por la URL. | Conversaciones de A en la lista de B: 0. Por URL con el UUID de A: sin acceso True. La interfaz no tiene campo que acepte un UUID; la lista solo ofrece las de B. POST /gradio_api/queue/join al evento de selección con el UUID de A: HTTP 200; datos devueltos con contenido de A: no. | [18_b_sin_conversaciones_de_a.png](capturas/18_b_sin_conversaciones_de_a.png) [19_b_url_con_uuid_de_a.png](capturas/19_b_url_con_uuid_de_a.png) | 3.5 | aprobado |
 | 15. Cerrar sesión en los dos | No queda nada visible y Atrás no reutiliza la sesión. | A: sin datos visibles tras cerrar True; Atrás llevó a página en blanco, luego Adelante y muestra el inicio de sesión sin datos True; B: sin datos visibles tras cerrar True; Atrás llevó a app y muestra el inicio de sesión sin datos True. | [20_cierre_de_sesion_a.png](capturas/20_cierre_de_sesion_a.png) [21_atras_tras_cerrar_a.png](capturas/21_atras_tras_cerrar_a.png) [22_cierre_de_sesion_b.png](capturas/22_cierre_de_sesion_b.png) [23_atras_tras_cerrar_b.png](capturas/23_atras_tras_cerrar_b.png) | 11.4 | aprobado |
 
-## Revisiones adicionales
+### Revisiones adicionales
 
 | Revisión | Observado | Capturas | Estado |
 |---|---|---|---|
