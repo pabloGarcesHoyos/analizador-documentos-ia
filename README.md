@@ -1,55 +1,50 @@
 # Analizador de Documentos
 
-Aplicación web para consultar políticas de facturación, contratos y documentos de identificación, revisar el estado de expedientes y generar informes con fuentes citadas.
+Aplicación web para consultar políticas de facturación, contratos y documentos de identificación con fuentes citadas, revisar el estado de documentos y solicitudes y preparar informes que solo se escriben con aprobación del usuario.
 
 Proyecto del curso Inteligencia Artificial Generativa y Sistemas Inteligentes, EAM 2026-II. Equipo: Pablo Garcés Hoyos y Axel Dereck Gutiérrez.
 
-## Qué hace
+Aplicación publicada: https://analizador-documentos-v871.onrender.com
 
-- Responde preguntas sobre políticas con recuperación híbrida (BM25 y embeddings, fusión RRF y reordenamiento) sobre un corpus ficticio guardado en Supabase con pgvector. Cada frase de la respuesta lleva la cita del pasaje que la respalda.
-- Consulta el estado de documentos `DOC-XXXX` y solicitudes `SOL-XXXX` con un servidor MCP propio de solo lectura.
-- Clasifica el texto de un documento con el contrato del corte 1.
-- Propone un informe en Markdown que solo se escribe, con el servidor Filesystem MCP, si el usuario lo aprueba.
-- Inicio de sesión con Supabase Auth. Las conversaciones de cada usuario se guardan con seguridad a nivel de fila: nadie lee ni escribe las de otro.
+## Problema
 
-## Estructura
+Quien revisa facturas, contratos y documentos de identificación necesita saber qué exige cada política, en qué estado va un trámite y si un documento cumple lo mínimo, sin que un modelo invente requisitos ni estados. La aplicación responde solo con lo que está escrito en el corpus, cita el pasaje de cada frase, consulta el estado en un registro y separa la falta de evidencia de un error técnico.
 
-```
-app/                aplicación (Root Directory en Render)
-  app.py            interfaz Gradio
-  sistema.py        enrutador, contratos, validación y clientes MCP
-  almacenamiento.py autenticación, conversaciones y mensajes en Supabase
-  recuperacion.py   recuperación híbrida con modelos ONNX
-  servidor_mcp.py   servidor MCP de consulta de estado
-  cargar_corpus.py  carga única del corpus
-  sql/              esquema, políticas de seguridad y funciones
-  corpus/           documentos ficticios del corpus
-  tests/            pruebas
-evidencias/         resultados de las pruebas por fase
-render.yaml         configuración de despliegue en Render
-```
+## Arquitectura resumida
 
-## Ejecución local
+- Interfaz Gradio con inicio de sesión de Supabase Auth.
+- Enrutador por reglas, que elige entre consulta de estado, pregunta de políticas, pregunta mixta, clasificación de un documento, rechazo o aclaración.
+- Servidor MCP propio, de solo lectura, para el estado de `DOC-XXXX` y `SOL-XXXX`.
+- RAG sobre Supabase pgvector, con recuperación híbrida (BM25 y embeddings, fusión RRF y reordenamiento) y modelos ONNX cargados bajo demanda.
+- Modelo `openai/gpt-oss-20b` de Groq, con salida JSON validada: cada frase lleva la cita de su pasaje.
+- Informe en Markdown escrito con el Filesystem MCP solo después de la aprobación del usuario.
+- Conversaciones y mensajes de cada usuario guardados en Supabase con seguridad a nivel de fila.
 
-```
+El detalle está en [`app/README.md`](app/README.md).
+
+## Ejecución rápida
+
+Linux/macOS, con Python 3.13:
+
+```bash
+git clone https://github.com/pabloGarcesHoyos/analizador-documentos-ia
+cd analizador-documentos-ia
 python3.13 -m venv .venv
-.venv/bin/pip install -r requirements-pruebas.txt
+.venv/bin/python -m pip install -r app/requirements.txt
 cp app/.env.ejemplo app/.env
-.venv/bin/python app/descargar_modelos.py
-npm ci --prefix app/mcp_archivos --omit=dev
-.venv/bin/python app/app.py
+cd app
+../.venv/bin/python descargar_modelos.py
+../.venv/bin/npm ci --prefix mcp_archivos --omit=dev
+../.venv/bin/python app.py
 ```
 
-Completa `app/.env` con los datos de tu proyecto de Supabase y tu clave de Groq. Ejecuta los archivos de `app/sql/` en el SQL Editor y carga el corpus con `python app/cargar_corpus.py`.
+Antes de arrancar hay que completar `app/.env` y preparar Supabase (SQL, usuarios y corpus). Los pasos completos, PowerShell incluido, están en [`app/README.md`](app/README.md).
 
-## Pruebas
+## Documentación
 
-```
-.venv/bin/python -m pytest
-```
+- [`app/README.md`](app/README.md): instalación, configuración, corpus, Supabase, MCP, despliegue, pruebas y limitaciones.
+- [`BITACORA_PROYECTO.md`](BITACORA_PROYECTO.md): bitácora unificada de los tres cortes (pendiente de la fase final).
+- [`evidencias/`](evidencias/): resultados de las pruebas por fase y del corte 2.
+- [`notebooks/`](notebooks/): notebooks de los cortes anteriores.
 
-Las pruebas de integración con Supabase y Groq se marcan aparte (`-m integracion`, `-m groq`) y necesitan `app/.env.pruebas`.
-
-## Estado
-
-La documentación completa de arquitectura, decisiones, evaluación y despliegue se agrega en la última fase del proyecto.
+Licencia: MIT ([`LICENSE`](LICENSE)).
