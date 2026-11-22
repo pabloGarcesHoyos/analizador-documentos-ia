@@ -1,5 +1,6 @@
 import json
 import re
+import time
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from typing import Any
 
 from postgrest.exceptions import APIError
 from supabase import ClientOptions, create_client
-from supabase_auth.errors import AuthError
+from supabase_auth.errors import AuthApiError, AuthError
 
 ROLES = ("usuario", "asistente")
 DECISIONES = ("aprobada", "rechazada")
@@ -17,6 +18,7 @@ MAX_CONTENIDO = 20000
 MAX_ESTADO = 60
 MAX_DESTINO = 300
 MAX_CONVERSACIONES = 200
+MAX_CORREO, MAX_CLAVE = 320, 200
 TURNOS_CONTEXTO = 4
 PATRON_HUELLA = re.compile(r"^[0-9a-f]{64}$")
 PATRON_URL = re.compile(r"^(https://[^\s/]+|http://(127\.0\.0\.1|localhost)(:\d+)?)/?$")
@@ -47,6 +49,14 @@ class DatosInvalidos(ErrorAlmacenamiento):
 
 
 class AccionYaRegistrada(ErrorAlmacenamiento):
+    pass
+
+
+class CredencialesInvalidas(ErrorAlmacenamiento):
+    pass
+
+
+class ServicioNoDisponible(ErrorAlmacenamiento):
     pass
 
 
@@ -289,3 +299,72 @@ class Almacenamiento:
         if len(filas) != 1:
             raise AccionYaRegistrada("La acción no existe, no fue aprobada o ya tenía resultado.")
         return filas[0]
+
+
+def crear_cliente_autenticacion(configuracion: ConfiguracionSupabase):
+    opciones = ClientOptions(persist_session=False, auto_refresh_token=False)
+    return create_client(configuracion.url, configuracion.clave_publicable, options=opciones)
+
+
+@dataclass(frozen=True)
+class Sesion:
+    access_token: str
+    refresh_token: str
+    expira_en: float
+    usuario_id: str
+    correo: str
+
+    def como_estado(self) -> dict:
+        return {"access_token": self.access_token, "refresh_token": self.refresh_token, "expira_en": self.expira_en,
+                "usuario_id": self.usuario_id, "correo": self.correo}
+
+
+def _sesion_desde(respuesta: Any) -> Sesion:
+    sesion = getattr(respuesta, "session", None)
+    usuario = getattr(respuesta, "user", None) or getattr(sesion, "user", None)
+    if not sesion or not getattr(sesion, "access_token", None) or not getattr(sesion, "refresh_token", None) or not getattr(usuario, "id", None):
+        raise SesionInvalida("El servicio de autenticación no devolvió una sesión.")
+    expira = getattr(sesion, "expires_at", None) or time.time() + (getattr(sesion, "expires_in", None) or 3600)
+    return Sesion(sesion.access_token, sesion.refresh_token, float(expira), str(usuario.id), str(getattr(usuario, "email", "") or ""))
+
+
+class Autenticacion:
+    def __init__(self, configuracion: ConfiguracionSupabase, fabrica: Callable[[ConfiguracionSupabase], Any] = crear_cliente_autenticacion):
+        self._configuracion = configuracion
+        self._fabrica = fabrica
+
+    def iniciar_sesion(self, correo: str, clave: str) -> Sesion:
+        if not isinstance(correo, str) or not isinstance(clave, str) or not correo.strip() or not clave:
+            raise CredencialesInvalidas("Escribe el correo y la contraseña.")
+        if len(correo) > MAX_CORREO or len(clave) > MAX_CLAVE:
+            raise CredencialesInvalidas("El correo o la contraseña son demasiado largos.")
+        try:
+            respuesta = self._fabrica(self._configuracion).auth.sign_in_with_password({"email": correo.strip(), "password": clave})
+        except AuthApiError as error:
+            if getattr(error, "status", None) == 429:
+                raise ServicioNoDisponible("Demasiados intentos de inicio de sesión; espera unos minutos.") from None
+            if getattr(error, "status", None) and error.status >= 500:
+                raise ServicioNoDisponible("El servicio de autenticación no respondió; intenta de nuevo.") from None
+            raise CredencialesInvalidas("No se pudo iniciar sesión: revisa el correo y la contraseña.") from None
+        except AuthError:
+            raise ServicioNoDisponible("El servicio de autenticación no respondió; intenta de nuevo.") from None
+        except Exception:
+            raise ServicioNoDisponible("No fue posible conectar con el servicio de autenticación.") from None
+        return _sesion_desde(respuesta)
+
+    def refrescar(self, refresh_token: str) -> Sesion:
+        if not isinstance(refresh_token, str) or not refresh_token.strip():
+            raise SesionInvalida("No hay una sesión para renovar.")
+        try:
+            respuesta = self._fabrica(self._configuracion).auth.refresh_session(refresh_token)
+        except Exception:
+            raise SesionInvalida("La sesión venció y no se pudo renovar.") from None
+        return _sesion_desde(respuesta)
+
+    def cerrar_sesion(self, access_token: str, refresh_token: str) -> None:
+        try:
+            cliente = self._fabrica(self._configuracion)
+            cliente.auth.set_session(access_token, refresh_token)
+            cliente.auth.sign_out({"scope": "local"})
+        except Exception:
+            return
