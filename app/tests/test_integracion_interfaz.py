@@ -18,7 +18,7 @@ class SistemaSinModelo:
     def __init__(self, almacen):
         self.almacen = almacen
 
-    async def atender(self, texto, conversacion_id, token):
+    async def atender(self, texto, conversacion_id, token, al_esperar=None):
         _, guardado = await asyncio.to_thread(self.almacen.guardar_turno, token, conversacion_id, texto, "Respuesta de prueba sin modelo.", "RESPONDIDA")
         return si.ResultadoAtencion("RESPONDIDA", "Respuesta de prueba sin modelo.", conversacion_id, mensaje_id=guardado["id"], persistido=True)
 
