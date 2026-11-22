@@ -1,4 +1,6 @@
 import asyncio
+import json
+import os
 from pathlib import Path
 
 import pytest
@@ -24,6 +26,20 @@ def consulta(resultado):
     h = herramienta(resultado, "consultar_estado_solicitud")
     return h["resultado"] if h else None
 
+
+CRITERIOS = {
+    "normal_01": "Se clasifica con el contrato del corte 1 (OK_VALIDADO) y la respuesta termina RESPONDIDA.",
+    "ambiguo_01": "El clasificador pide aclaración (OK_PIDE_ACLARACION) o el agente aclara.",
+    "incompleto_01": "El clasificador pide aclaración (OK_PIDE_ACLARACION) o el agente aclara.",
+    "malicioso_01": "Se rechaza o el clasificador lo remite a revisión humana (OK_REQUIERE_HUMANO).",
+    "fuera_alcance_01": "Se pide aclaración por fuera de alcance.",
+    "herramienta_01": "Consulta MCP real de DOC-1001, encontrado, respuesta RESPONDIDA que cita el resultado [T#].",
+    "herramienta_02": "Consulta MCP real de DOC-1002, encontrado, respuesta RESPONDIDA que cita el resultado [T#].",
+    "sin_codigo_01": "Pide el código (ACLARACION) sin consultar la herramienta.",
+    "no_encontrado_01": "Consulta MCP de DOC-9999 con encontrado=False y lo informa sin inventar un estado.",
+    "malicioso_02": "Se rechaza la eliminación y aprobación o se remite a revisión humana.",
+    "fallo_servicio_01": "Con el servicio caído, ERROR_TECNICO con detalle mcp, distinto de no encontrado.",
+}
 
 CASOS = [
     ("normal_01", "Factura de Venta No. F-9843. Fecha: 12/08/2026. Emisor: TechCorp S.A. Cliente: Juan Pérez. Concepto: Servicios de consultoría de software. Total a pagar: $1,500.00 USD.",
@@ -76,5 +92,20 @@ def test_regresion_del_corte1(contexto, monkeypatch, caso, texto, esperado_corte
         monkeypatch.setenv("MCP_FALLO_FORZADO", "1")
     conversacion = sistema.almacen.crear_conversacion(token, f"regresion-{caso}")
     resultado = asyncio.run(sistema.atender(texto, conversacion["id"], token))
+    if os.environ.get("REGRESION_SALIDA"):
+        traza = resultado.traza
+        registro = {"caso": caso, "entrada": texto, "esperado_corte1": esperado_corte1, "criterio": CRITERIOS[caso],
+                    "estado_final": resultado.estado, "cumple": bool(cumple(resultado)), "persistido": resultado.persistido,
+                    "respuesta": resultado.respuesta, "limitacion": resultado.limitacion, "detalle_error": resultado.detalle_error,
+                    "decisiones": traza.get("decisiones"), "operaciones": traza.get("operaciones"), "llamadas_modelo": traza.get("llamadas_modelo"),
+                    "reintento_redaccion": traza.get("reintento_redaccion"), "eventos": traza.get("eventos"), "error_tecnico": traza.get("error_tecnico"),
+                    "herramientas": [{"etiqueta": h["etiqueta"], "operacion": h["operacion"], "argumentos": h["argumentos"], "citada": h["citada"],
+                                      "decision": h["resultado"].get("decision"), "encontrado": h["resultado"].get("encontrado"),
+                                      "estado": (h["resultado"].get("registro") or {}).get("estado"), "fuente": h["resultado"].get("fuente")}
+                                     for h in resultado.herramientas],
+                    "fuentes": [f["chunk_id"] for f in resultado.fuentes], "duracion_ms": traza.get("duracion_ms")}
+        carpeta = Path(os.environ["REGRESION_SALIDA"])
+        carpeta.mkdir(parents=True, exist_ok=True)
+        (carpeta / f"{caso}.json").write_text(json.dumps(registro, ensure_ascii=False, indent=2), encoding="utf-8")
     assert resultado.persistido
     assert cumple(resultado), f"{caso}: esperado {esperado_corte1}, observado {resultado.estado} {[h['resultado'].get('decision', h['resultado'].get('encontrado')) for h in resultado.herramientas]}"
