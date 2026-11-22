@@ -290,3 +290,24 @@ def test_decisiones_de_informe_por_conversacion_y_solo_propias(base, almacen):
     assert list(decisiones) == [asistente["id"]] and decisiones[asistente["id"]]["decision"] == "rechazada"
     with pytest.raises(al.AccesoDenegado):
         almacen.decisiones_informe("token-b", conversacion)
+
+
+def test_cargar_conversacion_valida_el_token_una_vez_y_trae_mensajes_y_decisiones(base, almacen):
+    conversacion = almacen.crear_conversacion("token-a", "Vista")["id"]
+    _, asistente = almacen.guardar_turno("token-a", conversacion, "pide informe", "respuesta", "PROPUESTA_INFORME", propuesta_informe=propuesta_valida())
+    almacen.registrar_decision_informe("token-a", conversacion, asistente["id"], "rechazada", "informe_0123456789ab.md", propuesta_valida()["huella_contenido"])
+    antes = len(base.tokens_usados)
+    mensajes, decisiones = almacen.cargar_conversacion("token-a", conversacion)
+    assert len(base.tokens_usados) - antes == 1
+    assert [m["rol"] for m in mensajes] == ["usuario", "asistente"] and decisiones[asistente["id"]]["decision"] == "rechazada"
+    with pytest.raises(al.AccesoDenegado):
+        almacen.cargar_conversacion("token-b", conversacion)
+
+
+def test_cargar_conversacion_vacia_propia_y_ajena(base, almacen):
+    propia = almacen.crear_conversacion("token-a", "Vacía")["id"]
+    assert almacen.cargar_conversacion("token-a", propia) == ([], {})
+    with pytest.raises(al.AccesoDenegado):
+        almacen.cargar_conversacion("token-b", propia)
+    with pytest.raises(al.AccesoDenegado):
+        almacen.cargar_conversacion("token-a", str(uuid.uuid4()))

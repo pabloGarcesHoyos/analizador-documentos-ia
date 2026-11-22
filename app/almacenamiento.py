@@ -232,6 +232,24 @@ class Almacenamiento:
             filas = self._ejecutar(consulta.order("id", desc=True).limit(ultimos))
         return sorted(filas, key=lambda f: f["id"])
 
+    def cargar_conversacion(self, token: str, conversacion_id: str) -> tuple[list[dict], dict[int, dict]]:
+        conversacion_id = _uuid(conversacion_id, "La conversación")
+        cliente, usuario_id = self._abrir(token)
+        mensajes = [f for f in self._ejecutar(
+            cliente.table("mensajes").select(COLUMNAS_MENSAJE + ",usuario_id").eq("conversacion_id", conversacion_id).eq("usuario_id", usuario_id).order("id")
+        ) if f.get("usuario_id") == usuario_id]
+        if not mensajes:
+            self._conversacion_propia(cliente, usuario_id, conversacion_id)
+            return [], {}
+        decisiones: dict[int, dict] = {}
+        if any(f.get("propuesta_informe") for f in mensajes):
+            acciones = self._ejecutar(
+                cliente.table("acciones_informe").select("id,mensaje_id,usuario_id,decision,resultado,destino")
+                .eq("conversacion_id", conversacion_id).eq("usuario_id", usuario_id)
+            )
+            decisiones = {f["mensaje_id"]: f for f in acciones if f.get("usuario_id") == usuario_id}
+        return sorted(({k: v for k, v in f.items() if k != "usuario_id"} for f in mensajes), key=lambda f: f["id"]), decisiones
+
     def ventana_contexto(self, token: str, conversacion_id: str, turnos: int = TURNOS_CONTEXTO) -> list[dict]:
         if not isinstance(turnos, int) or turnos < 1:
             raise DatosInvalidos("La ventana debe tener al menos un turno.")

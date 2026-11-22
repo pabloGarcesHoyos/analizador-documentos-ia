@@ -326,8 +326,7 @@ class Interfaz:
             return {}
         try:
             sesion = self._vigente(sesion)
-            filas = self.almacen.cargar_mensajes(sesion["access_token"], conversacion_id)
-            decisiones = self.almacen.decisiones_informe(sesion["access_token"], conversacion_id)
+            filas, decisiones = self.almacen.cargar_conversacion(sesion["access_token"], conversacion_id)
         except al.SesionInvalida:
             return vista_inicio(AVISO_VENCIDA)
         except (al.AccesoDenegado, al.DatosInvalidos):
