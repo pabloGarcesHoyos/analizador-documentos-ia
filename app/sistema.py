@@ -37,6 +37,11 @@ PATRON_CODIGO_EXACTO = re.compile(r"^(?:DOC|SOL)-[0-9]{4}$")
 PATRON_CITA = re.compile(r"[\[【(]\s*([FT]\d+(?:\s*[,;]\s*[FT]\d+)*)\s*[\]】)]")
 PATRON_INFORME = re.compile(r"\b(informe|reporte)s?\b", re.IGNORECASE)
 PATRON_DESTINO = re.compile(r"^informe_[0-9a-f]{12}\.md$")
+PATRON_SOLO_CITAS = re.compile(r"^(?:\s*[\[【(]\s*[FT]\d+(?:\s*[,;]\s*[FT]\d+)*\s*[\]】)])+\s*[.!?]?\s*$")
+PATRONES_SECRETOS = [(re.compile(r"eyJ[A-Za-z0-9_.-]+"), "<token>"), (re.compile(r"gsk_[A-Za-z0-9]+"), "<clave>"),
+                     (re.compile(r"sb_(?:publishable|secret)_[A-Za-z0-9_-]+"), "<clave>"),
+                     (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"), "<correo>")]
+MAX_SALIDA_RECHAZADA = 600
 FUENTE_CLASIFICADOR = "clasificador_corte1_analizador_v3"
 
 ESTADO_RESPUESTA = {"respondida": "RESPONDIDA", "parcial": "PARCIAL", "evidencia_insuficiente": "SIN_EVIDENCIA", "no_aplica": "RESPONDIDA"}
@@ -155,9 +160,10 @@ class Detencion(Exception):
 
 
 class DecisionInvalida(Exception):
-    def __init__(self, motivo: str, accion: Any = None):
+    def __init__(self, motivo: str, accion: Any = None, contenido: str | None = None):
         super().__init__(motivo)
         self.accion = accion
+        self.contenido = contenido
 
 
 class Decision(BaseModel):
@@ -426,7 +432,32 @@ def menciones(texto: str) -> list[str]:
 
 
 def frases(texto: str) -> list[str]:
-    return [f for f in re.split(r"(?<=[.!?])\s+|\n+", texto) if f.strip()]
+    unidas: list[str] = []
+    for parte in (f for f in re.split(r"(?<=[.!?])\s+|\n+", texto) if f.strip()):
+        if unidas and PATRON_SOLO_CITAS.match(parte):
+            unidas[-1] = f"{unidas[-1]} {parte.strip()}"
+        else:
+            unidas.append(parte)
+    return unidas
+
+
+def etiquetas_por_frase(texto: str) -> list[tuple[str, set[str]]]:
+    lista = frases(texto)
+    resultado = []
+    for indice, frase in enumerate(lista):
+        propias = set(menciones(frase))
+        if indice + 1 < len(lista):
+            inicio = re.match(r"^\s*((?:[\[【(]\s*[FT]\d+(?:\s*[,;]\s*[FT]\d+)*\s*[\]】)]\s*)+)", lista[indice + 1])
+            if inicio:
+                propias |= set(menciones(inicio.group(1)))
+        resultado.append((frase, propias))
+    return resultado
+
+
+def filtrar_secretos(texto: str) -> str:
+    for patron, reemplazo in PATRONES_SECRETOS:
+        texto = patron.sub(reemplazo, texto)
+    return texto
 
 
 def _normalizar_valor(valor: str) -> str:
@@ -455,8 +486,8 @@ def validar_citas(respuesta: str, citas: list[str], catalogo: dict[str, dict]) -
         sensibles = {resultado["codigo_solicitud"].lower()}
         if resultado.get("registro"):
             sensibles.add(_normalizar_valor(resultado["registro"]["estado"]))
-        for frase in frases(respuesta):
-            if any(s in _normalizar_valor(frase) for s in sensibles) and etiqueta not in menciones(frase):
+        for frase, etiquetas in etiquetas_por_frase(respuesta):
+            if any(s in _normalizar_valor(frase) for s in sensibles) and etiqueta not in etiquetas:
                 raise ValueError(f"La frase que informa el estado de {resultado['codigo_solicitud']} debe citar {etiqueta}, el resultado de la herramienta.")
     return limpias
 
@@ -569,7 +600,7 @@ class Sistema:
                 accion = json.loads(contenido).get("accion")
             except (ValueError, AttributeError):
                 accion = None
-            raise DecisionInvalida(str(error).splitlines()[0], accion) from None
+            raise DecisionInvalida(str(error).splitlines()[0], accion, contenido) from None
 
     async def _clasificar(self, texto: str, traza: dict, limite: float | None = None) -> dict:
         mensajes = [{"role": "system", "content": PROMPT_CLASIFICADOR},
@@ -584,15 +615,18 @@ class Sistema:
         decision, analisis, motivo = validar_y_decidir_clasificacion(datos, texto)
         return {"decision": decision, "motivo": motivo, "clasificacion": analisis.model_dump() if analisis else None, "fuente": FUENTE_CLASIFICADOR}
 
-    def _rechazo(self, traza: dict, paso: int, tipo: str, motivo: str) -> str:
+    def _rechazo(self, traza: dict, paso: int, tipo: str, motivo: str, salida: str | None = None) -> str:
         motivo = motivo.splitlines()[0][:300]
         traza["eventos"].append({"paso": paso, "etapa": "DECISION_RECHAZADA", "tipo": tipo, "motivo": motivo})
+        if salida:
+            traza["salidas_rechazadas"].append({"paso": paso, "tipo": tipo, "salida": filtrar_secretos(salida)[:MAX_SALIDA_RECHAZADA]})
         return motivo
 
     async def _reintentar_redaccion(self, texto: str, memoria: list[dict], permitidos: set[str], observaciones: list[dict],
                                     catalogo: dict[str, dict], motivo: str, paso: int, traza: dict, limite: float | None) -> tuple[Decision, list[str]]:
         traza["reintento_redaccion"] = {"usado": True, "motivo": motivo, "resultado": "pendiente"}
         observaciones.append({"salida_final_rechazada": motivo, "indicacion": "Redacta de nuevo solo la salida final; sin operaciones ni citas sin procedencia."})
+        decision = None
         try:
             decision = await self._decidir(texto, memoria, permitidos, observaciones, {"decisiones": 0, "operaciones": 0, "reintento_redaccion": 1}, traza, limite)
             if decision.accion not in TERMINALES:
@@ -600,7 +634,8 @@ class Sistema:
             citas = validar_decision(decision, texto, permitidos, catalogo, True)
         except (ValueError, DecisionInvalida) as error:
             traza["reintento_redaccion"]["resultado"] = "rechazado"
-            self._rechazo(traza, paso, "redaccion_reintento", str(error))
+            salida = getattr(error, "contenido", None) or (decision.model_dump_json() if decision else None)
+            self._rechazo(traza, paso, "redaccion_reintento", str(error), salida)
             raise Detencion("ERROR_VALIDACION") from None
         traza["reintento_redaccion"]["resultado"] = "aceptado"
         traza["eventos"].append({"paso": paso, "etapa": "REDACCION_REINTENTADA_VALIDADA", "accion": decision.accion})
@@ -620,16 +655,16 @@ class Sistema:
                 decision = await self._decidir(texto, memoria, permitidos, observaciones, restantes, traza, limite)
             except DecisionInvalida as error:
                 if error.accion in TERMINALES:
-                    motivo = self._rechazo(traza, paso, "redaccion", str(error))
+                    motivo = self._rechazo(traza, paso, "redaccion", str(error), error.contenido)
                     decision, citas = await self._reintentar_redaccion(texto, memoria, permitidos, observaciones, catalogo, motivo, paso, traza, limite)
                     return decision, citas, catalogo
-                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error))})
+                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error), error.contenido)})
                 continue
             if decision.accion in TERMINALES:
                 try:
                     citas = validar_decision(decision, texto, permitidos, catalogo, clasificado)
                 except ValueError as error:
-                    motivo = self._rechazo(traza, paso, "redaccion", str(error))
+                    motivo = self._rechazo(traza, paso, "redaccion", str(error), decision.model_dump_json())
                     decision, citas = await self._reintentar_redaccion(texto, memoria, permitidos, observaciones, catalogo, motivo, paso, traza, limite)
                     return decision, citas, catalogo
                 traza["eventos"].append({"paso": paso, "etapa": "DECISION_VALIDADA", "accion": decision.accion})
@@ -637,7 +672,7 @@ class Sistema:
             try:
                 validar_decision(decision, texto, permitidos, catalogo, clasificado)
             except ValueError as error:
-                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error))})
+                observaciones.append({"decision_rechazada": self._rechazo(traza, paso, "ruta", str(error), decision.model_dump_json())})
                 continue
             traza["eventos"].append({"paso": paso, "etapa": "DECISION_VALIDADA", "accion": decision.accion})
             argumentos = ({"consulta": decision.consulta.strip()} if decision.accion == "buscar_documentos"
@@ -677,7 +712,7 @@ class Sistema:
         traza = {"modelo": self.configuracion.groq_modelo, "recuperacion_configurada": self.configuracion.recuperacion,
                  "limites": {"decisiones": MAX_DECISIONES, "operaciones": MAX_OPERACIONES, "reintentos_redaccion": REINTENTOS_REDACCION,
                             "turnos_contexto": TURNOS_CONTEXTO, "segundos": self.configuracion.max_segundos},
-                 "eventos": [], "llamadas": [], "recuperacion": [], "decisiones": 0, "operaciones": 0, "llamadas_modelo": 0,
+                 "eventos": [], "llamadas": [], "recuperacion": [], "salidas_rechazadas": [], "decisiones": 0, "operaciones": 0, "llamadas_modelo": 0,
                  "reintento_redaccion": {"usado": False, "motivo": "", "resultado": "no_aplica"}}
         if not isinstance(texto, str) or not 1 <= len(texto.strip()) <= MAX_ENTRADA:
             return ResultadoAtencion("ERROR_ENTRADA", f"Escribe entre 1 y {MAX_ENTRADA} caracteres.", str(conversacion_id), traza=traza)
