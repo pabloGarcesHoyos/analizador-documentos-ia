@@ -2,7 +2,7 @@
 
 Fecha: 2026-11-22 22:50 UTC. URL: https://analizador-documentos-v871.onrender.com. Commit desplegado en Render: `1ce46c5`. Navegador: Chromium con Playwright 1.64.1, idioma es-ES.
 
-Resultado: 5 de 5 aprobadas el 2026-11-22, más la prueba 5 (informe con aprobación) aprobada el 2026-11-23.
+Resultado: 5 de 5 aprobadas el 2026-11-22, más la prueba 5 (informe con aprobación) y la prueba 6 (vista de celular), aprobadas el 2026-11-23.
 
 Las credenciales se leen de `app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión se cubre con un recuadro gris; antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave. El paso 4 se corre en local porque necesita una clave inválida inyectada solo en el entorno del proceso.
 
@@ -29,3 +29,14 @@ Objetivo: comprobar que el Filesystem MCP corre en Render con el Node del servic
 | 5.3 Reabrir | Abrir de nuevo la conversación en una sesión nueva | Se ve "aprobado y escrito" y no hay botones. | Indicador: "Conversación cargada. La propuesta de informe ya tiene una decisión registrada.". Nota: "Informe informe_870ff15f9bed.md: aprobado y escrito.". Sin Aprobar ni Rechazar: sí. | [05c_reabierta_aprobada.png](capturas/05c_reabierta_aprobada.png) | aprobado |
 
 El primer intento de reabrir, en la misma sesión, se detuvo por una espera del script al cambiar a otra conversación; no fue un fallo de la app. Se reabrió en una sesión nueva sin volver a enviar la pregunta.
+
+## Prueba 6: vista de celular en la URL pública (2026-11-23)
+
+Fecha: 2026-11-23 04:27:21 UTC. URL: https://analizador-documentos-v871.onrender.com. Commit desplegado en Render: `8a9ed74`, activo desde las 04:17 UTC (el código de `app/` no cambia desde `1ce46c5`). Usuario: demostración. Navegador: Chromium con Playwright 1.64.1, ventana de 390 por 844 px en modo móvil, idioma es-ES.
+
+Se usó una consulta de estado, que no llama al modelo ni carga los modelos de recuperación. La pregunta se envió una sola vez, en una conversación nueva, y al terminar se cerró la sesión. Las credenciales se leyeron de `app/.env.pruebas` dentro del script y no se imprimieron ni se guardaron.
+
+| Paso | Entrada o acción | Esperado | Observado | Captura | Estado |
+|---|---|---|---|---|---|
+| 6.1 Consulta en celular | "¿En qué estado está DOC-1002?" | Lista de conversaciones plegada; respuesta de la ruta de estado con `[T1]` y el bloque de la consulta, legible en 390 px. | Respuesta en 15.6 s. Indicador: "Respondida con datos del registro.". Frase: "El documento DOC-1002 figura en el registro documental con estado pendiente_firma_legal [T1]." Consulta: DOC-1002, registro `registro_sistema_documental_v1`, encontrado, tipo contrato. Lista de conversaciones plegada: sí. | [06_celular_390x844_estado_doc_1002.png](capturas/06_celular_390x844_estado_doc_1002.png) | aprobado |
+| 6.2 Cerrar sesión | Botón Cerrar sesión | Vuelve al formulario de inicio de sesión. | Formulario visible: sí. | | aprobado |
