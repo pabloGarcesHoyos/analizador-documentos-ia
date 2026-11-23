@@ -223,7 +223,7 @@ Todas las corridas son del 2026-11-22, con `openai/gpt-oss-20b` y recuperación 
 | Interfaz, corrida 3 | 15 de 15 | 15 de 15 | cumple | [`evidencias/fase3/prueba_interfaz.md`](evidencias/fase3/prueba_interfaz.md) |
 | URL pública, commit `1ce46c5` | Sin evidencia, reinicio, aislamiento y falla técnica | 5 de 5 | cumple | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md) |
 | Instalación desde un clon limpio, commit `ce7fcbd` | Arranque siguiendo el README | Arranca; las 497 pruebas sin servicios externos pasan. Hizo falta un acceso `python3.13`, que se agregó al README. | cumple | [`evidencias/fase6/clon_limpio.md`](evidencias/fase6/clon_limpio.md) |
-| Prueba ciega: 6 preguntas propias de Axel | Escrito por él antes de usar la app | Pendiente de resultados | pendiente | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
+| Prueba ciega: 6 preguntas propias de Axel, ejecutadas el 2026-11-23 en la URL pública con su usuario (commit desplegado `4a12b75`) | Lo esperado por Axel, versionado antes en `9b81c9a` | 4 aprobadas, 1 fallida y 1 a revisar. Falló "¿Me puedes decir cómo va el trámite SOL-2048?": se esperaba la ruta estado sin modelo y salió mixta con 1 llamada, porque el enrutador toma "puedes" como señal de pregunta de políticas; el dato del registro fue correcto. A revisar: "Quiero que apruebes y registres una factura nueva" terminó en rechazo sin herramientas, pero por la ruta libre con 1 llamada, y la respuesta no dice qué no puede hacer. | parcial | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
 
 ## 5. Errores, limitaciones y correcciones
 
@@ -283,7 +283,7 @@ La meta era Render Free con 512 MB. Con PyTorch no cupo ninguna configuración. 
 ### 5.6 Limitaciones y pendientes
 
 - **`normal_01`.** El clasificador pide aclaración en todas las corridas del corte 3, porque la factura no trae NIT ni desglose de impuestos, que el corpus 2.0 exige. No se cambió el prompt ni lo esperado ([`evidencias/fase2/observacion_normal_01.md`](evidencias/fase2/observacion_normal_01.md)).
-- **Reserva no ciega.** El resultado oficial de reserva_3 es el 5 de 6 de flujo_v2; el 6 de 6 posterior no es ciego. La prueba ciega son las preguntas de Axel, pendientes de resultados.
+- **Reserva no ciega.** El resultado oficial de reserva_3 es el 5 de 6 de flujo_v2; el 6 de 6 posterior no es ciego. La prueba ciega son las preguntas de Axel: 4 aprobadas, 1 fallida y 1 a revisar (sección 4).
 - **`reserva3_registrar_factura`.** Quedó en `ERROR_VALIDACION` con flujo_v2 y flujo_v3; con rag_v5 pasa, pero ese resultado ya no es ciego.
 - **Enrutador por reglas.** Una frase con otra forma puede caer en la ruta libre.
 - **Paráfrasis de estados.** En algunos casos aprobados del agente_v3, el modelo repitió el estado con otras palabras. El control compara el valor exacto. En el flujo vigente, el modelo no recibe el valor del estado.
@@ -311,7 +311,7 @@ Tomados de las bitácoras de cada clase. Lo que no tiene respaldo queda marcado.
 | Clase 11 | La bitácora registra a los dos juntos en prompts del agente, límites y pruebas de integración. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C11 |
 | Corte 3, aplicación | Los commits del repositorio están hechos con su cuenta. Reparto de componentes: [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | Historia de git |
 | Corte 3, publicación en Render y reinicio para la prueba de recuperación | [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md) |
-| Corte 3, prueba ciega | | 6 preguntas propias con lo esperado escrito antes: pendiente de resultados | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
+| Corte 3, prueba ciega | Ejecución con Playwright en presencia de Axel | Escribió las 6 preguntas y lo esperado antes de usarlas; se ejecutaron con su usuario el 2026-11-23 | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
 
 ## 7. Uso de asistentes
 
@@ -353,7 +353,7 @@ Las cifras que no pudieron respaldarse con un archivo no se usan como resultados
 - Interfaz: 15 de 15.
 - URL pública: 5 de 5.
 - Clon limpio: arranca y pasan sus pruebas.
-- Prueba ciega: pendiente.
+- Prueba ciega con las 6 preguntas de Axel: 4 aprobadas, 1 fallida y 1 a revisar. Las dos que no pasaron muestran el límite del enrutador por reglas: una forma de preguntar no prevista cambia la ruta.
 
 ### Conclusiones del equipo
 
