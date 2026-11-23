@@ -316,7 +316,7 @@ Comandos, desde la raíz:
 | Lectura o inserción en una conversación ajena | UUID de A usado por B | | Lectura y escritura negadas por RLS | [fase1](../evidencias/fase1/pruebas_integracion.md) | Aprobado |
 | Regresión del corte 1 | 11 casos | | 10 de 11; falla `normal_01` | [fase2](../evidencias/fase2/regresion_corte1_20261122T2027_flujo_v4.md) | 10 aprobados, 1 fallido |
 | Reserva 3 | 6 casos | | 5 de 6 (resultado oficial, flujo_v2); 6 de 6 con rag_v5, ya no ciega | [flujo_v2](../evidencias/fase2/reserva3_flujo_20261122T1901_flujo_v2.md), [rag_v5](../evidencias/fase2/reserva3_flujo_20261122T2030_flujo_v4.md) | Ver limitaciones |
-| Preguntas propias no vistas | 6 preguntas que escribe Axel | | Pendiente | [fase4](../evidencias/fase4/preguntas_propias_axel.md) | Pendiente |
+| Preguntas propias no vistas | 6 preguntas que escribió Axel, ejecutadas en la URL pública con su usuario | | 4 aprobadas; la 1 tomó la ruta mixta en vez de estado; la 5 rechazó por la ruta libre | [fase4](../evidencias/fase4/preguntas_propias_axel.md) | 4 aprobadas, 1 fallida, 1 a revisar |
 
 Las métricas de recuperación del corte 2 están en [`evidencias/corte2/`](../evidencias/corte2/).
 
@@ -352,8 +352,8 @@ Las métricas de recuperación del corte 2 están en [`evidencias/corte2/`](../e
 ### Limitaciones
 
 - `normal_01` (regresión del corte 1): el clasificador pide aclaración en todas las corridas registradas, porque la factura no trae NIT ni desglose de impuestos, que el corpus 2.0 exige. Se documenta sin cambiar el prompt ni lo esperado.
-- La reserva 3 no es una prueba ciega del enrutador: sus textos se conocían al escribir las reglas y al diseñar rag_v5. Su resultado oficial es el 5 de 6 de flujo_v2. La prueba ciega pendiente son las preguntas propias de Axel.
-- El enrutador es por reglas: una frase con otra forma puede caer en la ruta libre.
+- La reserva 3 no es una prueba ciega del enrutador: sus textos se conocían al escribir las reglas y al diseñar rag_v5. Su resultado oficial es el 5 de 6 de flujo_v2. La prueba ciega son las preguntas propias de Axel: 4 aprobadas, 1 fallida y 1 a revisar.
+- El enrutador es por reglas: una frase con otra forma puede tomar otra ruta. En la prueba ciega, "¿Me puedes decir cómo va el trámite SOL-2048?" fue a la ruta mixta porque "puedes" cuenta como señal de pregunta de políticas, y "Quiero que apruebes..." se rechazó por la ruta libre, con una llamada al modelo, porque no empieza con la orden.
 - Latencia en Render Free: en las pruebas de la URL pública, una respuesta RAG tardó 24 s. En local, en la corrida 3 de la prueba en el navegador, las respuestas tardaron entre 2,9 y 8,0 s ([evidencias/fase3/prueba_interfaz.md](../evidencias/fase3/prueba_interfaz.md)). La primera visita tras dormir tarda más.
 - `get_user` en Supabase Auth tiene picos de hasta unos 2 s, así que algunos cambios de conversación pasan de 2 s. Validar el token en cada operación es una regla del proyecto.
 - El límite diario de Groq en la cuenta gratuita restringe cuántas pruebas con el modelo caben en un día.
