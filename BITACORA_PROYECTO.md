@@ -15,7 +15,7 @@ Este documento cuenta cómo evolucionó el proyecto, qué se decidió, qué se p
 7. [Uso de asistentes](#7-uso-de-asistentes)
 8. [Funcionamiento final y conclusiones](#8-funcionamiento-final-y-conclusiones)
 
-Fuentes usadas: las bitácoras de las clases 02, 03, 04, 09, 10 y 11; el README y las evidencias del corte 1; el notebook y la presentación entregados en el corte 2; la versión corregida del corte 2; el plan de trabajo del corte 3 y la carpeta [`evidencias/`](evidencias/). Las bitácoras de las clases 06, 07 y 08 no estaban disponibles al escribir este documento.
+Fuentes usadas: las bitácoras de las clases 02 a 04 y 06 a 11; el README, las evidencias y la presentación del corte 1; el notebook y la presentación entregados en el corte 2; la versión corregida del corte 2; el plan de trabajo del corte 3 y la carpeta [`evidencias/`](evidencias/). Los notebooks de las clases 02, 06, 07 y 08 no están en el repositorio: lo que viene de esas clases se respalda solo con su bitácora.
 
 ## 1. Problema, usuarios, objetivos y alcance
 
@@ -44,7 +44,7 @@ El analizador solo consulta. No registra, aprueba, firma, modifica, cancela ni e
 | Etapa | Qué era el proyecto | Por qué cambió | Fuente |
 |---|---|---|---|
 | Clase 02 (2026-09-02) | Analizador de contratos y documentos legales: responder preguntas sobre un fragmento de contrato y abstenerse si el dato no aparece. | El curso pasó a salidas estructuradas y herramientas; el alcance se amplió a cuatro tipos de documento. | Bitácora C02 |
-| Corte 1 (entrega 2026-09-20) | Clasificador de documentos (`factura`, `contrato`, `identificacion`, `desconocido`) con contrato de salida validado y una herramienta de solo lectura para consultar el estado de `DOC-XXXX`. | El corte 2 pidió recuperación sobre un corpus (RAG). | [`notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb`](notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb) |
+| Corte 1 (entrega 2026-09-20) | Clasificador de documentos (`factura`, `contrato`, `identificacion`, `desconocido`) con contrato de salida validado y una herramienta de solo lectura para consultar el estado de `DOC-XXXX`. | El corte 2 pidió recuperación sobre un corpus (RAG). | [`notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb`](notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb), [presentación del corte 1](evidencias/corte1/presentacion/Corte1_AnalizadorDocumentos.pptx) |
 | Corte 2 (entrega 2026-11-02) | Se conserva el clasificador y se agrega RAG sobre políticas de facturación, contratos e identificación, con embeddings en Supabase y una mejora de recuperación elegida por evaluación. | El corte 3 pidió una aplicación web con historial por usuario. | [`notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb`](notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb), [`notebooks/Corte2_AnalizadorDocumentos_RAG.ipynb`](notebooks/Corte2_AnalizadorDocumentos_RAG.ipynb) |
 | Corte 3 (2026-11-22) | Aplicación Gradio con inicio de sesión, historial en Supabase con RLS, MCP propio de estado, informe con Filesystem MCP y aprobación del usuario. | | [`app/`](app/) |
 
@@ -120,7 +120,7 @@ Las versiones vigentes se leen en [`app/sistema.py`](app/sistema.py) (`FLUJO_VER
 
 | Versión | Contenido | Fragmentación | Resultado | Fuente |
 |---|---|---|---|---|
-| Corpus 1.0 (corte 2 entregado) | 2 documentos: `politicas_facturacion.md` y `gestion_contratos_identificacion.md` | 9 fragmentos en `clase08_fragmentos` | Un fragmento cortado en "...el monto esta incompleto, el sistema" | [`notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb`](notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb), celdas 5, 7 y 25 |
+| Corpus 1.0 (corte 2 entregado) | 2 documentos: `politicas_facturacion.md` y `gestion_contratos_identificacion.md` | Por párrafos con 80 tokens incluido el encabezado de sección (Clase 07): 9 fragmentos en `clase08_fragmentos` | Un fragmento cortado en "...el monto esta incompleto, el sistema" | [`notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb`](notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb), celdas 5, 7 y 25 |
 | Corpus 2.0 (vigente) | 4 documentos, versión `2.0-2026-10`, con cada regla junto a su condición y su consecuencia | Por párrafos, con un presupuesto de 120 tokens que solo divide los párrafos que no caben: 20 fragmentos sin unidades partidas | Con 80 tokens se partían reglas; con ventanas fijas de 60 tokens se partían unidades anotadas | [`evidencias/corte2/corrida_2_rag_v3/indice/comparacion_estrategias.json`](evidencias/corte2/corrida_2_rag_v3/indice/comparacion_estrategias.json); bitácora C10 |
 
 El corpus 2.0 tiene el identificador `analizador_documental_v2-057b729f44ae`, y `app/cargar_corpus.py` lo reproduce exactamente.
@@ -192,6 +192,9 @@ Estados: **cumple**, **parcial** o **no cumple** frente a lo esperado. Se incluy
 
 | Fecha | Configuración o versión | Esperado | Observado | Estado | Evidencia |
 |---|---|---|---|---|---|
+| 2026-10-06 | Clase 06: embeddings `paraphrase-multilingual-MiniLM-L12-v2` sobre un corpus de prueba de 5 pasajes (D1 a D5) | La búsqueda semántica encuentra lo que la literal no | Búsqueda literal por "recibo": lista vacía. Búsqueda semántica: D1 en primer lugar, con similitud 0,451. Una pregunta fuera de cobertura también devuelve candidatos con puntaje, así que la similitud no basta para saber si hay evidencia. | cumple | Bitácora C06 |
+| 2026-10-07 | Clase 07: corpus 1.0, ventanas fijas frente a párrafos, 80 tokens por fragmento con encabezado | Ningún fragmento pasa del límite del modelo (128 tokens) y el índice se recarga igual | Máximo de 78 tokens; recarga del índice comprobada con aserciones. Se eligió la fragmentación por párrafos. | cumple | Bitácora C07 |
+| 2026-10-14 | Clase 08: corpus 1.0 en Supabase (`clase08_fragmentos`), búsqueda por RPC y generación con Groq y el contrato `RespuestaRAG` (rag_v1) | Respuesta con citas validadas | Primera ejecución: error técnico, porque el modelo agrupaba citas (`[F1, F3]`) o escribía etiquetas que no ponía en la lista. Con reglas de citación individual en el prompt, la respuesta pasó la validación. La persistencia se comprobó desde un segundo cliente. | parcial | Bitácora C08 |
 | 2026-10-20 (entregado el 2026-11-02) | Clase 09: corpus 1.0, 8 casos, A, B y C | Una configuración con ventaja medida | A, B y C con los mismos valores en desarrollo y reserva: Recall@3 1,0, MRR 1,0 y cobertura 1,0. Medianas en desarrollo: A 518,9 ms, B 519,4 ms y C 1.343,6 ms. | no cumple | [`notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb`](notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb), celdas 17 y 19 |
 | 2026-10-24 | Corrida 1: corpus 2.0, 17 casos, rag_v2 | Respuestas validadas en A y C | Recuperación: C elegida por la regla. Generación: 25 de 34 respuestas en `ERROR_VALIDACION`. Regresión del corte 1: 8 de 11. | no cumple | [`evidencias/corte2/corrida_1_rag_v2/`](evidencias/corte2/corrida_1_rag_v2/) |
 | 2026-10-24 | Corrida 2: corpus 2.0, 17 casos, rag_v3 | Estado aceptable y respuestas fieles | Estado aceptable: A 15 de 17 y C 17 de 17, sin errores técnicos. Revisión humana: A fiel en 17 de 17 y C en 14 de 17 (D1, D6 y R1 con afirmaciones sin respaldo). Regresión: 9 de 11. | parcial | [`evidencias/corte2/corrida_2_rag_v3/`](evidencias/corte2/corrida_2_rag_v3/), [`revision_humana_corrida_2.json`](evidencias/corte2/corrida_2_rag_v3/revision_humana_corrida_2.json) |
@@ -287,7 +290,7 @@ La meta era Render Free con 512 MB. Con PyTorch no cupo ninguna configuración. 
 - **Latencia y autenticación.** Una respuesta RAG tardó 24 s en Render Free. `get_user` tiene picos de unos 2 s, que no se ocultan porque el token se valida en cada operación.
 - **Cupo de Groq.** El límite diario de la cuenta gratuita restringe las pruebas con el modelo.
 - **Informes.** No se conservan en el servidor: en Render el disco se borra al reiniciar, por eso se ofrecen para descargar.
-- **Material de cortes anteriores.** El notebook de la Clase 02 y las bitácoras de las clases 06 a 08 no están en el repositorio. La presentación del corte 1 no se encontró (su carpeta solo tiene un aviso).
+- **Material de cortes anteriores.** Los notebooks de las clases 02, 06, 07 y 08 no están en el repositorio; esas clases se respaldan solo con su bitácora.
 
 ## 6. Aportes de cada integrante
 
@@ -298,7 +301,9 @@ Tomados de las bitácoras de cada clase. Lo que no tiene respaldo queda marcado.
 | Corte 1, Clase 02 | Entorno en Colab con GPU T4, Ollama y `gemma4:e2b`; ejecución de las seis configuraciones | Pregunta normal y ambigua; revisión manual de las seis respuestas; detección de la abstención duplicada; bitácora de la clase | Bitácora C02 (el notebook no está en el repositorio) |
 | Corte 1, Clase 03 | Secreto `GROQ_API_KEY`, salidas estructuradas y ejecución de los cinco casos (secciones 2, 7 y 8) | Esquema `AnalisisDocumento`, reglas de decisión y prueba negativa (secciones 3, 8 y 9) | Bitácora C03; [`notebooks/Clase_03_Demo_Groq.ipynb`](notebooks/Clase_03_Demo_Groq.ipynb) |
 | Corte 1, Clase 04 y entrega | Corrección de errores, los 11 casos de la matriz y las corridas mock y groq | Esquemas Pydantic del análisis y de los argumentos, refactorización de `ejecutar_pipeline` y ejecución de la suite | Bitácora C04; registro de equipo en las salidas de [`notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb`](notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb); [`evidencias/corte1/`](evidencias/corte1/) |
-| Corte 2, Clases 06 a 08 | [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | Bitácoras no disponibles |
+| Corte 2, Clase 06 | La bitácora registra el trabajo a nombre de "Estudiante", sin separar integrantes: corpus de prueba D1 a D5, vectorización y búsqueda por similitud coseno. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C06 |
+| Corte 2, Clase 07 | La bitácora registra a los dos juntos en ingestión, fragmentación, metadatos e índice persistente, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C07 |
+| Corte 2, Clase 08 | La bitácora registra a los dos juntos en Supabase Vector, RAG con Groq, reglas de citación del prompt y depuración, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C08 |
 | Corte 2, Clase 09 | La bitácora registra a los dos juntos en BM25, RRF, reordenador, casos y validador, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C09 |
 | Corte 2, entrega del 2026-11-02 (notebook y presentación) | [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | |
 | Corte 2, versión del 2026-10-24 (Clase 10) | Integración del corte 1 con RAG, Supabase y Colab, ejecución de las corridas y revisión humana de A | Corpus 2.0, conjunto de 17 casos, clave de Groq de la corrida final y revisión humana de C | Bitácora C10; campo `revisor` en [`revision_humana_corrida_2.json`](evidencias/corte2/corrida_2_rag_v3/revision_humana_corrida_2.json) |
