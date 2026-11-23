@@ -269,7 +269,7 @@ Defectos del notebook de la Clase 11, corregidos en la app:
 
 ### 5.4 Memoria y cambio a ONNX
 
-La meta era Render Free con 512 MB. Con PyTorch no cupo ninguna configuración. Con ONNX qint8, C con los dos modelos residentes muere al cargar el reordenador; C bajo demanda cabe con un pico de 497 MB y 15 MB de margen, medido bajo emulación. Se aplicaron reducciones de memoria en onnxruntime, en el asignador de memoria y en el arranque del Filesystem MCP. En Render no hubo reinicios por memoria durante las pruebas; Render Free no muestra la memoria, así que la app escribe una línea por turno en el log ([`evidencias/fase0/memoria_y_onnx.md`](evidencias/fase0/memoria_y_onnx.md)).
+La meta era Render Free con 512 MB. Con PyTorch no cupo ninguna configuración. Con ONNX qint8, C con los dos modelos residentes muere al cargar el reordenador; C bajo demanda cabe con un pico de 497 MB y 15 MB de margen, medido bajo emulación. Se aplicaron reducciones de memoria en onnxruntime, en el asignador de memoria y en el arranque del Filesystem MCP. En Render no hubo reinicios por memoria durante las pruebas. Render Free no muestra la memoria, así que la app escribe una línea por turno en el log; en esas líneas, el pico de memoria residente del proceso llegó a 506,7 MB en un turno RAG, cerca de los 512 MB y sin reinicios ([`evidencias/fase0/memoria_y_onnx.md`](evidencias/fase0/memoria_y_onnx.md)).
 
 ### 5.5 Otras correcciones del corte 3
 

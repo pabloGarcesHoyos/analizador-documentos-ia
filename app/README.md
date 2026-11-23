@@ -182,7 +182,7 @@ Memoria en un contenedor de 512 MB, emulado en local:
 | C bajo demanda (`C_DEMANDA`) | Sí | 497 MB | 362 MB | 1,8 a 2,2 s |
 | B (embeddings cargados, BM25 y RRF, sin reordenamiento) | Sí | 460 MB | 446 MB | 28 a 62 ms |
 
-`C_DEMANDA` carga cada modelo solo durante la consulta y lo libera al terminar. Así conserva la recuperación del corte 2 dentro de 512 MB. En Render Free corre sin reinicios por memoria hasta ahora (Events del servicio). Render Free no muestra la memoria, así que la app escribe en los logs, después de cada turno, una línea `turno ruta=… ms=… rss_mb=… pico_mb=… hijos_mb=… pico_hijos_mb=…`. Si el servicio muere por memoria, se cambia `RECUPERACION` a `B`.
+`C_DEMANDA` carga cada modelo solo durante la consulta y lo libera al terminar. Así conserva la recuperación del corte 2 dentro de 512 MB. En Render Free corre sin reinicios por memoria hasta ahora (Events del servicio). En el log de Render, el pico de memoria residente del proceso llegó a 506,7 MB en un turno RAG, cerca de los 512 MB, sin que el servicio se reiniciara ([`evidencias/fase0/memoria_y_onnx.md`](../evidencias/fase0/memoria_y_onnx.md)). Render Free no muestra la memoria, así que la app escribe en los logs, después de cada turno, una línea `turno ruta=… ms=… rss_mb=… pico_mb=… hijos_mb=… pico_hijos_mb=…`. Si el servicio muere por memoria, se cambia `RECUPERACION` a `B`.
 
 ### Pasos que se hacen una vez
 
