@@ -1,0 +1,21 @@
+{
+  "DOC-1001": {
+    "tipo": "factura",
+    "estado": "verificado_y_contabilizado",
+    "emisor": "TechCorp S.A.",
+    "monto": "$1,500.00 USD",
+    "fecha_proceso": "2026-08-12"
+  },
+  "DOC-1002": {
+    "tipo": "contrato",
+    "estado": "pendiente_firma_legal",
+    "partes": "Servicios Prof. / Cliente",
+    "fecha_proceso": "2026-09-01"
+  },
+  "DOC-1003": {
+    "tipo": "identificacion",
+    "estado": "rechazado_imagen_borrosa",
+    "titular": "María Gómez",
+    "fecha_proceso": "2026-09-05"
+  }
+}

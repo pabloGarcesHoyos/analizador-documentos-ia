@@ -1,0 +1,53 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "tipo_documento": {
+      "type": "string",
+      "enum": [
+        "factura",
+        "contrato",
+        "identificacion",
+        "desconocido"
+      ]
+    },
+    "nivel_riesgo": {
+      "type": "string",
+      "enum": [
+        "bajo",
+        "medio",
+        "alto"
+      ]
+    },
+    "resumen_contenido": {
+      "type": "string"
+    },
+    "entidades_clave": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "campos_faltantes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requiere_revision_humana": {
+      "type": "boolean"
+    },
+    "confianza": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "tipo_documento",
+    "nivel_riesgo",
+    "resumen_contenido",
+    "entidades_clave",
+    "campos_faltantes",
+    "requiere_revision_humana",
+    "confianza"
+  ]
+}

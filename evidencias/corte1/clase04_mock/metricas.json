@@ -1,0 +1,19 @@
+{
+  "modo": "mock",
+  "ejecuciones_totales": 12,
+  "ejecuciones_con_api_real": 0,
+  "latencia_ms_promedio": 0.14,
+  "latencia_ms_minima": 0.02,
+  "latencia_ms_maxima": 1.02,
+  "latencia_ms_promedio_una_llamada": null,
+  "latencia_ms_promedio_dos_llamadas": null,
+  "latencia_excluye_pausas_por_cupo": true,
+  "pausa_cupo_ms_total": 0.0,
+  "latencia_es_comparable_con_el_modelo": false,
+  "tokens_entrada_totales": null,
+  "tokens_salida_totales": null,
+  "llamadas_al_modelo": 0,
+  "incidentes_limite_tasa": 0,
+  "segundos_esperando_cupo": 0,
+  "ejecuciones_detenidas_por_cupo": 0
+}

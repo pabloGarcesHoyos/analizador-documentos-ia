@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "codigo_documento": {
+      "pattern": "^DOC-[0-9]{4}$",
+      "title": "Codigo Documento",
+      "type": "string"
+    }
+  },
+  "required": [
+    "codigo_documento"
+  ],
+  "title": "ArgumentosEstadoDocumento",
+  "type": "object"
+}

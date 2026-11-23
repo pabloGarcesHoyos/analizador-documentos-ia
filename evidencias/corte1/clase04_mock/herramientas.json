@@ -1,0 +1,24 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "consultar_estado_documento",
+      "description": "Consulta el estado de verificación y procesamiento de un documento mediante su código único DOC-XXXX. Operación de solo lectura.",
+      "parameters": {
+        "additionalProperties": false,
+        "properties": {
+          "codigo_documento": {
+            "pattern": "^DOC-[0-9]{4}$",
+            "title": "Codigo Documento",
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo_documento"
+        ],
+        "title": "ArgumentosEstadoDocumento",
+        "type": "object"
+      }
+    }
+  }
+]

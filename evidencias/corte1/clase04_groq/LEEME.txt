@@ -1,0 +1,4 @@
+Evidencias del notebook de la Clase 04 - Analizador de Documentos
+Modo de ejecucion: groq
+Generado (UTC): 20260920T215039Z
+Evidencia obtenida con llamadas reales a la API.

@@ -1,0 +1,4 @@
+Evidencias del notebook de la Clase 04 - Analizador de Documentos
+Modo de ejecucion: mock
+Generado (UTC): 20260920T214707Z
+ATENCION: evidencia obtenida en modo mock. Las clasificaciones fueron escritas por el equipo y las latencias no representan el rendimiento del modelo.

@@ -1,0 +1,13 @@
+{
+  "modo": "mock",
+  "evidencia_real": false,
+  "modelo": "mock (sin API)",
+  "temperatura": null,
+  "max_tokens_clasificacion": 1400,
+  "max_tokens_herramienta": 1000,
+  "timeout_s": 30,
+  "max_reintentos": 0,
+  "prompt_version": "analizador_v2_herramienta",
+  "prompt_herramienta_version": "herramienta_v2_tres_casos",
+  "secreto_requerido": "GROQ_API_KEY (no se incluye su valor)"
+}
