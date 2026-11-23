@@ -12,6 +12,6 @@ Se conservan tal como se entregaron o ejecutaron, sin cambios en su código. La 
 
 En `evidencias/corte2/corrida_2_rag_v3/` se omiten dos archivos de la ejecución original: `sql/analizador_supabase_setup.sql`, reemplazado por `app/sql/`, y `evaluacion/pruebas_negativas.json`, porque contienen comentarios y caracteres que las reglas de este repositorio no admiten.
 
-En `evidencias/corte1/` se omite `bitacora.json` de cada ejecución, por la misma razón.
+En `evidencias/corte1/` se omite `bitacora.json` de cada ejecución, por la misma razón. La presentación entregada en el corte 1 está en [`evidencias/corte1/presentacion/`](../evidencias/corte1/presentacion/), sin cambios.
 
 Antes de versionarlos se revisaron sus salidas y metadatos: no contienen claves, tokens, correos, rutas personales ni URL de Supabase.
