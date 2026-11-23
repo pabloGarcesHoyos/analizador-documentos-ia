@@ -58,9 +58,9 @@ Propuesta de informe aprobada en la URL pública: al reabrir la conversación se
 
 ![Conversación con el informe aprobado y escrito](evidencias/fase4/capturas/05c_reabierta_aprobada.png)
 
-Vista en un celular de 390 px de ancho: la lista de conversaciones queda plegada y la respuesta muestra sus fuentes.
+Vista en un celular de 390 por 844 px en la URL pública: la lista de conversaciones queda plegada y la consulta de estado de `DOC-1002` muestra su `[T1]` y el bloque de la consulta.
 
-<img src="evidencias/fase3/capturas_v3/36_vista_celular_390x844_conversacion.png" alt="Vista de la aplicación en un celular" width="300">
+<img src="evidencias/fase4/capturas/06_celular_390x844_estado_doc_1002.png" alt="Consulta de estado de DOC-1002 en un celular" width="300">
 
 El recorrido completo, con cada paso, lo esperado y lo observado, está en [`evidencias/fase3/prueba_interfaz.md`](evidencias/fase3/prueba_interfaz.md) y [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md).
 
