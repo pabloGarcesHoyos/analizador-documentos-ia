@@ -363,7 +363,7 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <ul class="small">
 <li>La API directa de Gradio está cerrada: sus rutas responden 404 y los eventos sin sesión válida responden 400.</li>
 <li>Una cita <code>[F#]</code> debe venir del RAG del turno y una <code>[T#]</code>, de una herramienta. Si no corresponde, la salida se rechaza; nunca se agregan citas.</li>
-<li>Las órdenes de eliminar, aprobar o firmar se rechazan sin llamar al modelo.</li>
+<li>Una entrada que empieza con una orden de eliminar, aprobar o firmar se rechaza sin llamar al modelo; si la orden viene después, decide la ruta libre, con una llamada al modelo (en la prueba ciega, la rechazó).</li>
 </ul>
 </div>
 </div>
@@ -386,7 +386,7 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <tr><td>Interfaz en el navegador</td><td class="ok">15 de 15 pasos</td><td></td></tr>
 <tr><td>URL pública: sin evidencia, reinicio, aislamiento y falla técnica</td><td class="ok">5 de 5</td><td>La falla técnica se probó en local</td></tr>
 <tr><td>Aislamiento entre usuarios contra Supabase real</td><td class="ok">8 de 8</td><td></td></tr>
-<tr><td>Prueba ciega: 6 preguntas de Axel, no vistas por quien escribió el enrutador</td><td class="pend">Pendiente</td><td>Se registrará tal como salga</td></tr>
+<tr><td>Prueba ciega: 6 preguntas de Axel, no vistas por quien escribió el enrutador</td><td class="ok">4 de 6</td><td>"¿Me puedes decir cómo va...?" fue a la ruta mixta; "Quiero que apruebes..." se rechazó, pero con el modelo (a revisar)</td></tr>
 </tbody>
 </table>
 <p class="note" style="margin-top:14px">Lo esperado se escribió antes de cada corrida y no se cambió después. Evidencias en <code>evidencias/</code>.</p>
@@ -434,7 +434,7 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <h3>Limitaciones</h3>
 <ul class="small">
 <li>El enrutador es por reglas: una pregunta con otra forma puede caer en la ruta libre.</li>
-<li>Sus reglas se escribieron conociendo los casos de reserva; falta la prueba ciega.</li>
+<li>En la prueba ciega, dos preguntas con formas no previstas tomaron otra ruta.</li>
 <li>El modelo no es determinista: una corrida aislada no basta para comparar versiones.</li>
 <li>Latencia en Render y picos de unos 2 s al validar la sesión.</li>
 <li>El cupo diario gratuito de Groq limita las pruebas.</li>
@@ -444,7 +444,7 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <div>
 <h3>Mejoras pendientes</h3>
 <ul class="small">
-<li>Correr la prueba ciega y repetir cada caso varias veces, evaluando por mayoría.</li>
+<li>Ampliar las reglas del enrutador con las formas de la prueba ciega y repetir cada caso varias veces, evaluando por mayoría.</li>
 <li>Comprobar de forma automática que cada frase esté contenida en el pasaje que cita.</li>
 <li>Guardar los informes aprobados en un almacenamiento persistente.</li>
 <li>Ampliar el corpus y el conjunto de evaluación con casos nuevos.</li>
