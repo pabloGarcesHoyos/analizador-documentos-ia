@@ -2,7 +2,7 @@
 
 Fecha: 2026-11-22 22:50 UTC. URL: https://analizador-documentos-v871.onrender.com. Commit desplegado en Render: `1ce46c5`. Navegador: Chromium con Playwright 1.64.1, idioma es-ES.
 
-Resultado: 5 de 5 aprobadas.
+Resultado: 5 de 5 aprobadas el 2026-11-22, más la prueba 5 (informe con aprobación) aprobada el 2026-11-23.
 
 Las credenciales se leen de `app/.env.pruebas` dentro del script y no se imprimen. En las capturas, el correo de la sesión se cubre con un recuadro gris; antes de guardar cada captura el script comprueba que no se vea ninguna contraseña, token ni clave. El paso 4 se corre en local porque necesita una clave inválida inyectada solo en el entorno del proceso.
 
@@ -15,3 +15,17 @@ Comandos: `python app/tests/e2e/prueba_url_publica.py antes <url>`, reinicio man
 | 2c. Conversaciones tras reiniciar el servicio en Render | Volver a entrar con demo y abrir las dos conversaciones | Las dos conversaciones se ven idénticas a antes del reinicio. | Estado idéntica: True. Mixta idéntica: True. | [02c_estado_despues_del_reinicio.png](capturas/02c_estado_despues_del_reinicio.png) [02c_mixta_despues_del_reinicio.png](capturas/02c_mixta_despues_del_reinicio.png) | aprobado |
 | 3. Aislamiento en la URL pública | A y B con sesión al mismo tiempo; B intenta abrir una conversación de A por la lista, por la URL y por una llamada directa a la cola | B no ve ninguna conversación de A ni del demo; la URL con el UUID no la abre; la llamada directa termina en 4xx sin datos. | Conversaciones ajenas en la lista completa de B: 0 de 218. Por URL: sin acceso True. Llamada directa: HTTP 400, sin datos True. | [03_a_en_su_contexto.png](capturas/03_a_en_su_contexto.png) [03_b_sin_conversaciones_de_a.png](capturas/03_b_sin_conversaciones_de_a.png) [03_b_url_con_uuid_de_a.png](capturas/03_b_url_con_uuid_de_a.png) | aprobado |
 | 4. Falla técnica controlada (local, GROQ_API_KEY inválida solo en el entorno del proceso) | ¿Qué datos debe traer una factura para contabilizarla? | Se muestra como error técnico, con la aclaración de que no significa falta de información; distinto de sin evidencia. | 6348 ms. Indicador: "Error técnico: no se pudo completar la solicitud. No significa que falte información; intenta de nuevo.". Respuesta: ¿Qué datos debe traer una factura para contabilizarla?  Error técnico: no se pudo completar la solicitud. No significa que falte información; intenta de nuevo.  No se pudo completar la solicitud por un error técnico. Esto no significa que la información no exista; intenta de nuevo en unos minutos.  Detalle: El proveedor del modelo rechazó la solicitud. | [04_error_tecnico_con_clave_invalida.png](capturas/04_error_tecnico_con_clave_invalida.png) | aprobado |
+
+## Prueba 5: informe con aprobación en la URL pública (2026-11-23)
+
+Fecha: 2026-11-23 03:59:00 UTC. URL: https://analizador-documentos-v871.onrender.com. Commit desplegado en Render: `412e743` (el código de `app/` no cambia desde `1ce46c5`). Usuario: demostración. Navegador: Chromium con Playwright 1.64.1, sin interfaz visible, idioma es-ES.
+
+Objetivo: comprobar que el Filesystem MCP corre en Render con el Node del servicio. Lo esperado se escribió antes de correr. La pregunta se envió una sola vez, en una conversación nueva, y no se cambió código.
+
+| Paso | Entrada o acción | Esperado (escrito antes de correr) | Observado | Capturas | Estado |
+|---|---|---|---|---|---|
+| 5.1 Propuesta | "¿Qué datos debe traer una factura? Haz un informe" | Se muestran el contenido completo y el destino, con Aprobar y Rechazar. | Respuesta en 22.2 s. Indicador: "Respondida. Hay una propuesta de informe que espera tu aprobación.". Contenido de 751 caracteres que empieza con "# Informe del Analizador de Documentos". Destino `informe_870ff15f9bed.md`. Aprobar y Rechazar visibles: sí. Huella SHA-256 del contenido mostrado: `4052d555a556…`. | [05a_propuesta_de_informe.png](capturas/05a_propuesta_de_informe.png) (el panel queda bajo el borde de la pantalla; el contenido, el destino y los botones los verificó el script, y la captura 05b muestra el panel completo) | aprobado |
+| 5.2 Aprobar | Un clic en Aprobar | El Filesystem MCP escribe el archivo; se ofrece un solo archivo para descargar, igual a lo mostrado. | Aviso "Informe aprobado, escrito y verificado" en 8.9 s. Enlaces de descarga: 1. Archivo descargado `informe_870ff15f9bed.md`, idéntico a lo mostrado; huella `4052d555a556…`, igual a la mostrada. Decisiones en `acciones_informe`: una, aprobada y ejecutada, con el mismo destino y la misma huella. | [05b_aprobado_y_descargado.png](capturas/05b_aprobado_y_descargado.png) | aprobado |
+| 5.3 Reabrir | Abrir de nuevo la conversación en una sesión nueva | Se ve "aprobado y escrito" y no hay botones. | Indicador: "Conversación cargada. La propuesta de informe ya tiene una decisión registrada.". Nota: "Informe informe_870ff15f9bed.md: aprobado y escrito.". Sin Aprobar ni Rechazar: sí. | [05c_reabierta_aprobada.png](capturas/05c_reabierta_aprobada.png) | aprobado |
+
+El primer intento de reabrir, en la misma sesión, se detuvo por una espera del script al cambiar a otra conversación; no fue un fallo de la app. Se reabrió en una sesión nueva sin volver a enviar la pregunta.
