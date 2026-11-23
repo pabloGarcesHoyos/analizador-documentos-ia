@@ -1,0 +1,14 @@
+[
+  {
+    "estrategia": "parrafos",
+    "fragmentos": 20,
+    "unidades_partidas": 0,
+    "cobertura_media@3": 0.875
+  },
+  {
+    "estrategia": "ventanas",
+    "fragmentos": 20,
+    "unidades_partidas": 0,
+    "cobertura_media@3": 0.875
+  }
+]

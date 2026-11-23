@@ -1,0 +1,5 @@
+{
+  "regla": "cobertura > MRR > Recall@3 > simplicidad",
+  "decision": "Configuración elegida con desarrollo: C_hibrida_reranking. A_semantica: cobertura 0.875, MRR 0.875, Recall@3 0.875, latencia mediana 312 ms; B_hibrida_RRF: cobertura 0.812, MRR 0.792, Recall@3 0.812, latencia mediana 313 ms; C_hibrida_reranking: cobertura 0.938, MRR 0.938, Recall@3 0.938, latencia mediana 1065 ms. Regla: cobertura > MRR > Recall@3 > simplicidad.",
+  "reserva_abierta": true
+}

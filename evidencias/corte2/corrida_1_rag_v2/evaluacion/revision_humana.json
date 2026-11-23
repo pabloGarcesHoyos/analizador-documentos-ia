@@ -1,0 +1,366 @@
+{
+  "revision": {
+    "D1|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D1|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D2|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D2|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D3|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D3|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D4|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D4|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D5|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D5|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D6|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D6|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D7|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D7|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D8|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "D8|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R1|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R1|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R2|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R2|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R3|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R3|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R4|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "R4|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B1|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B1|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B2|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B2|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B3|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B3|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B4|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B4|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B5|A": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    },
+    "B5|MEJORA": {
+      "revisor": null,
+      "correcta": null,
+      "fiel": null,
+      "citas_respaldan": null,
+      "estado_adecuado": null,
+      "afirmaciones_documentales": null,
+      "afirmaciones_respaldadas": null,
+      "justificacion": ""
+    }
+  },
+  "doble": {
+    "D2": {
+      "Pablo": null,
+      "Axel": null,
+      "motivo_si_discrepan": ""
+    },
+    "D4": {
+      "Pablo": null,
+      "Axel": null,
+      "motivo_si_discrepan": ""
+    },
+    "B1": {
+      "Pablo": null,
+      "Axel": null,
+      "motivo_si_discrepan": ""
+    },
+    "B4": {
+      "Pablo": null,
+      "Axel": null,
+      "motivo_si_discrepan": ""
+    }
+  }
+}

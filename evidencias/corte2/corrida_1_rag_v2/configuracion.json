@@ -1,0 +1,52 @@
+{
+  "fecha_utc": "2026-10-24T14:44:08.332824+00:00",
+  "corpus_id": "analizador_documental_v2-057b729f44ae",
+  "indice": "cargado con upsert (20 filas; antes había 0)",
+  "embeddings": {
+    "modelo": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "estrategia": "parrafos",
+    "max_tokens": 120,
+    "solapamiento": 20,
+    "ventana_tokens": 60,
+    "solapamiento_ventana": 15,
+    "normalizados": true,
+    "similitud": "coseno",
+    "max_seq_length": 128,
+    "version_corpus": "2.0-2026-10"
+  },
+  "reranker": {
+    "modelo": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "revision": "1427fd652930e4ba29e8149678df786c240d8825"
+  },
+  "bm25": {
+    "libreria": "rank-bm25 0.2.2",
+    "algoritmo": "BM25Okapi",
+    "k1": 1.5,
+    "b": 0.75,
+    "epsilon": 0.25,
+    "tokenizacion": "casefold + sin tildes + códigos con guion; sin stemming"
+  },
+  "rrf": {
+    "constante": 60,
+    "pesos": {
+      "semantica": 1,
+      "bm25": 1
+    }
+  },
+  "K": 3,
+  "M": 10,
+  "modelo_generativo": "openai/gpt-oss-20b",
+  "prompts": {
+    "clasificacion": "analizador_v3",
+    "herramienta": "herramienta_v2_tres_casos",
+    "rag": "rag_v2"
+  },
+  "control_tasa": {
+    "tpm": 8000,
+    "fraccion": 0.8
+  },
+  "estrategia_fragmentacion": "parrafos",
+  "configuracion_elegida": "C_hibrida_reranking",
+  "mejora_comparada": "C_hibrida_reranking"
+}
