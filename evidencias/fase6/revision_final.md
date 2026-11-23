@@ -36,8 +36,8 @@ Estados: **cumple**, **parcial** (cumple con una salvedad que se indica) o **pen
 | 26 | Lo esperado distinto de lo observado y los pendientes explicados | [`evidencias/`](../) | Cada archivo de prueba registra entrada, esperado, observado y estado | cumple |
 | 27 | Presentación en `app/presentacion_proyecto.pdf` con problema, fuentes, recuperación, flujo, herramientas, persistencia, ejecución, resultados y limitaciones | [`app/presentacion_proyecto.pdf`](../../app/presentacion_proyecto.pdf) | Fuente en [`presentacion/presentacion_proyecto.html`](../../presentacion/presentacion_proyecto.html); 15 páginas revisadas una por una | cumple |
 | 28 | Notebook consolidado y evaluaciones de los cortes anteriores | [`notebooks/`](../../notebooks/), [`evidencias/corte1/`](../corte1/), [`evidencias/corte2/`](../corte2/) | [`notebooks/README.md`](../../notebooks/README.md) | parcial: falta el notebook de la Clase 02, que no está en el material del equipo |
-| 29 | Bitácora unificada con problema, arquitectura, decisiones, experimentos, errores, limitaciones, aportes y conclusiones, enlazada desde el README | [`BITACORA_PROYECTO.md`](../../BITACORA_PROYECTO.md) | Enlaces revisados en la sección 3 | parcial: los aportes sin respaldo están marcados para confirmar con el equipo |
-| 30 | Prueba ciega del enrutador (requisito propio del proyecto) | [`fase4/preguntas_propias_axel.md`](../fase4/preguntas_propias_axel.md) | | pendiente |
+| 29 | Bitácora unificada con problema, arquitectura, decisiones, experimentos, errores, limitaciones, aportes y conclusiones, enlazada desde el README | [`BITACORA_PROYECTO.md`](../../BITACORA_PROYECTO.md) | Enlaces revisados en la sección 3 | cumple: los aportes que las bitácoras no separan los confirmó el equipo como trabajo conjunto (2026-11-23) |
+| 30 | Prueba ciega del enrutador (requisito propio del proyecto) | [`fase4/preguntas_propias_axel.md`](../fase4/preguntas_propias_axel.md) | Ejecutada el 2026-11-23 en la URL pública con el usuario de Axel | cumple: 5 de 6 aprobadas (una con observación) y 1 fallida, registradas tal como salieron |
 
 ## 2. Secciones de la plantilla del README
 
@@ -102,3 +102,20 @@ Los notebooks de los cortes anteriores se conservan byte a byte como se entregar
 | Commit desplegado al cierre de esta revisión | `4b93b10`, despliegue de Render en estado `success` a las 02:55 UTC del 2026-11-23 (API de despliegues de GitHub) |
 
 El código de la aplicación no cambió desde el commit `1ce46c5`, que es el evaluado en [`fase4/pruebas_url_publica.md`](../fase4/pruebas_url_publica.md). Los commits posteriores solo agregan documentación, evidencias, la presentación y un script de prueba del navegador.
+
+## 6. Verificación final (2026-11-23)
+
+Repetida después de la prueba ciega y de registrar los aportes conjuntos, sobre `main` en `ba2106a`.
+
+| Revisión | Resultado |
+|---|---|
+| Marcas `[CONFIRMAR CON EL EQUIPO]` | 0 |
+| "Pendiente" que no corresponda | 0. Los que quedan son textos del corpus ("queda pendiente de información"), la leyenda de estados de las pruebas, las mejoras pendientes de la presentación y el requisito 21 de este archivo, que sigue pendiente |
+| Enlaces relativos y anclas en los 55 archivos `.md` | 309 enlaces, 0 rotos |
+| Pruebas sin servicios externos, incluida la de estilo (sin comentarios, sin docstrings y sin rastros ni caracteres decorativos) | 553 aprobadas |
+| Historia de git (129 commits, todas las ramas locales) | Sin claves de Groq, tokens, claves reales de Supabase, URL de proyecto ni rutas personales. Solo correos ficticios de pruebas. Autores y committers con la dirección `noreply`. Mensajes sin atribuciones. La única aparición de nombres de asistentes es la lista de palabras prohibidas de `app/tests/test_estilo.py` |
+| Notebooks, presentaciones y PDF versionados | Sin claves, correos ni nombres de asistentes |
+| Ramas publicadas | Solo `main` |
+| URL pública | `/` y `/config` responden 200; `/gradio_api/info` responde 404 |
+| Commit desplegado | `412e743`, despliegue `success`. Después solo cambió `BITACORA_PROYECTO.md`, fuera de `app/`; el código de la aplicación no cambia desde `1ce46c5` |
+| Repositorio público | HTTP 200 |

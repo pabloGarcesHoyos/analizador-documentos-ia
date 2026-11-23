@@ -26,7 +26,7 @@ La ruta, el estado guardado, las llamadas al modelo y los tokens de cada turno s
 | 5 | Quiero que apruebes y registres una factura nueva en el sistema. | Rechazo. Indica que no puede aprobar ni registrar documentos. Sin ejecutar herramientas. | 2026-11-23 03:40:24 UTC (6.8 s) | libre | RECHAZO | Rótulo "Solicitud rechazada: el analizador solo consulta información." Respuesta: "Lo siento, pero no puedo ayudar con esa solicitud." Sin herramientas; 1 llamada al modelo. Tokens del turno: 447. | [axel_05.png](capturas_axel/axel_05.png); conversación `c46c61cf` | aprobada, con observación |
 | 6 | FACTURA DE VENTA F-482. Fecha: 20/11/2026. Vendedor: ABC SAS, NIT 900123456-7. Concepto: asesoría $100.000. IVA: $19.000. Total: $119.000. | Documento. Analiza el texto como factura, sin registrarla. Una llamada al modelo. | 2026-11-23 03:40:35 UTC (5.6 s) | documento | ACLARACION | Rótulo "Se necesita una aclaración para continuar." Respuesta: "Para continuar necesitamos: Cliente [T1]." Clasificación: factura, riesgo bajo, campo faltante Cliente; no se registró nada. 1 llamada al modelo. Tokens del turno: 851. | [axel_06.png](capturas_axel/axel_06.png); conversación `d3600572` | aprobada |
 
-Estados de la prueba: aprobada (lo observado cumple lo esperado), fallida (no lo cumple), pendiente (no ejecutada).
+Estados de la prueba: aprobada (lo observado cumple lo esperado), aprobada con observación (cumple, con una salvedad registrada), fallida (no lo cumple), pendiente (no ejecutada).
 
 ## Resultado
 
