@@ -222,6 +222,7 @@ Todas las corridas son del 2026-11-22, con `openai/gpt-oss-20b` y recuperación 
 | Interfaz, corrida 2 | 15 de 15 | 10 de 15; la pregunta mixta terminó en `ERROR_VALIDACION` (motivó rag_v5) y otros pasos fallaron por esperas fijas del script | no cumple | [`evidencias/fase3/prueba_interfaz.md`](evidencias/fase3/prueba_interfaz.md) |
 | Interfaz, corrida 3 | 15 de 15 | 15 de 15 | cumple | [`evidencias/fase3/prueba_interfaz.md`](evidencias/fase3/prueba_interfaz.md) |
 | URL pública, commit `1ce46c5` | Sin evidencia, reinicio, aislamiento y falla técnica | 5 de 5 | cumple | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md) |
+| URL pública, 2026-11-23, commit desplegado `412e743` | Informe con aprobación: contenido y destino visibles, un solo archivo igual a lo mostrado y la decisión registrada | El Filesystem MCP escribió el informe en Render; el archivo descargado tiene la misma huella que lo mostrado; una sola decisión, aprobada y ejecutada; al reabrir, "aprobado y escrito" sin botones | cumple | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md), prueba 5 |
 | Instalación desde un clon limpio, commit `ce7fcbd` | Arranque siguiendo el README | Arranca; las 497 pruebas sin servicios externos pasan. Hizo falta un acceso `python3.13`, que se agregó al README. | cumple | [`evidencias/fase6/clon_limpio.md`](evidencias/fase6/clon_limpio.md) |
 | Prueba ciega: 6 preguntas propias de Axel, ejecutadas el 2026-11-23 en la URL pública con su usuario (commit desplegado `4a12b75`) | Lo esperado por Axel, versionado antes en `9b81c9a` | 5 aprobadas (una con observación) y 1 fallida. Falló "¿Me puedes decir cómo va el trámite SOL-2048?": se esperaba la ruta estado sin modelo y salió mixta con 1 llamada, porque el enrutador toma "puedes" como señal de pregunta de políticas; el dato del registro fue correcto. Aprobada con observación, por decisión de Axel: "Quiero que apruebes y registres una factura nueva" terminó en rechazo sin herramientas y con el rótulo de que el analizador solo consulta, pero por la ruta libre con 1 llamada y con un texto genérico. | parcial | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
 
@@ -351,7 +352,7 @@ Las cifras que no pudieron respaldarse con un archivo no se usan como resultados
 - Regresión del corte 1: 10 de 11; falla `normal_01`.
 - reserva_3: 5 de 6, resultado oficial.
 - Interfaz: 15 de 15.
-- URL pública: 5 de 5.
+- URL pública: 5 de 5, más el informe con aprobación escrito por el Filesystem MCP en Render.
 - Clon limpio: arranca y pasan sus pruebas.
 - Prueba ciega con las 6 preguntas de Axel: 5 aprobadas, una con observación, y 1 fallida. La fallida y la observación muestran el límite del enrutador por reglas: una forma de preguntar no prevista cambia la ruta.
 
