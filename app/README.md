@@ -296,7 +296,7 @@ Comandos, desde la raíz:
 .venv/bin/python -m pytest -m "groq and not reserva and not reserva2 and not reserva3" app/tests/test_regresion_corte1.py
 ```
 
-- La primera corre las 495 pruebas sin servicios externos.
+- La primera corre las pruebas que no usan servicios externos (548 el 2026-11-22; el número crece con los archivos versionados que revisa `test_estilo.py`).
 - La segunda corre 17 pruebas contra Supabase real y necesita `app/.env.pruebas`.
 - La tercera es la regresión del corte 1 con Groq.
 - Las pruebas de navegador están en `app/tests/e2e/` y necesitan `requirements-e2e.txt` y `python -m playwright install chromium`.
@@ -368,7 +368,7 @@ Las métricas de recuperación del corte 2 están en [`evidencias/corte2/`](../e
 
 ## Bitácora unificada del proyecto
 
-[`BITACORA_PROYECTO.md`](../BITACORA_PROYECTO.md) (pendiente de la fase final).
+[`BITACORA_PROYECTO.md`](../BITACORA_PROYECTO.md): problema y alcance de los tres cortes, decisiones técnicas con su alternativa descartada, experimentos y pruebas con su evidencia, errores, limitaciones, aportes del equipo y configuración vigente.
 
 ## Equipo y referencias
 
