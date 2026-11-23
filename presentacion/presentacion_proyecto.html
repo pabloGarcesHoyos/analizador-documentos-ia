@@ -24,7 +24,6 @@ h3{font-size:26px;line-height:1.2;margin:0 0 12px;color:var(--blue)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:40px}
 .two-wide{display:grid;grid-template-columns:1.25fr 1fr;gap:36px}
 .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;align-items:start}
-.two-img{display:grid;grid-template-columns:1.5fr 1fr;gap:36px}
 .sep>*+*{border-left:2px solid var(--line);padding-left:34px}
 p{margin:0 0 14px}
 p:last-child{margin-bottom:0}
@@ -310,11 +309,12 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <li>Tablas <code>conversaciones</code>, <code>mensajes</code> y <code>acciones_informe</code>, todas con RLS.</li>
 <li>Se guarda la conversación completa; al modelo van los últimos 4 turnos.</li>
 <li>El historial sobrevive al cierre de sesión y al reinicio del servidor.</li>
+<li><strong>Prueba en la URL pública:</strong> B no vio ninguna de las 218 conversaciones de A y del demo; con el <strong>UUID</strong> (identificador) de una conversación de A en la URL no se abre, y una llamada directa responde 400 sin datos.</li>
 </ul>
 </div>
 <div>
-<p class="small"><strong>Prueba en la URL pública:</strong> B no ve ninguna de las 218 conversaciones de A y del usuario de demostración. Con el <strong>UUID</strong> (identificador) de una conversación de A en la URL, no se abre; una llamada directa responde 400 sin datos.</p>
-<div class="shot"><img src="../evidencias/fase4/capturas/03_b_url_con_uuid_de_a.png" alt="Vista de B con la URL de una conversación de A: solo aparecen conversaciones de B y el chat está vacío"></div>
+<p class="small">Vista del usuario de demostración en la URL pública: solo aparecen sus conversaciones; el correo está cubierto.</p>
+<div class="crop" style="height:562px"><img src="../evidencias/fase6/capturas_presentacion/demo_mixta_pagina.png" alt="Aplicación con la lista de conversaciones del usuario de demostración y una respuesta abierta" style="width:1448px;left:-53px;top:0"></div>
 </div>
 </div>
 </div>
@@ -326,16 +326,16 @@ tr.elegida td{background:#e3f1f8;font-weight:750}
 <div class="presenta">Presenta: Axel</div>
 <div class="content">
 <header><p class="eyebrow">Una ejecución real en la URL pública</p><h2>Pregunta mixta: requisitos con [F#] y estado con [T#]</h2></header>
-<div class="body two-img">
-<div class="crop" style="height:496px"><img src="../evidencias/fase4/capturas/02a_mixta_antes_del_reinicio.png" alt="Respuesta a la pregunta mixta con la frase del registro citada como T1 y los requisitos citados como F1 y F2" style="width:1303px;left:-373px;top:-53px"></div>
+<div class="body" style="display:grid;grid-template-columns:1000px 1fr;gap:32px">
+<div class="crop" style="height:525px"><img src="../evidencias/fase6/capturas_presentacion/demo_mixta_respuesta.png" alt="Respuesta a la pregunta mixta: frase del registro con T1, requisitos con F1 y F2 y el bloque de fuentes" style="width:1000px;left:0;top:0"></div>
 <div>
 <p class="small"><strong>Entrada:</strong> "¿Qué requisitos tiene una factura y en qué estado está DOC-1001?"</p>
 <ol class="small">
-<li>El enrutador ve un código y una pregunta de política: ruta mixta.</li>
-<li>El MCP consulta DOC-1001. El programa escribe la frase del estado con <code>[T1]</code>.</li>
-<li>Solo "¿Qué requisitos tiene una factura" va a la recuperación. Salen dos pasajes del manual de facturación, <code>[F1]</code> y <code>[F2]</code>.</li>
-<li>El modelo devuelve frases con sus citas. El programa comprueba que cada cita sea de este turno y que ninguna frase afirme el estado.</li>
-<li>Se guarda en Supabase y se ve igual después de reiniciar el servicio.</li>
+<li>Hay código y pregunta de política: ruta mixta.</li>
+<li>El MCP consulta DOC-1001 y el programa escribe el estado con <code>[T1]</code>.</li>
+<li>La recuperación trae dos pasajes del manual: <code>[F1]</code> y <code>[F2]</code>.</li>
+<li>El programa valida cada cita y que el modelo no afirme el estado.</li>
+<li>Se guarda en Supabase.</li>
 </ol>
 </div>
 </div>
