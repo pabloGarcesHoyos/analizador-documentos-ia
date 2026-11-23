@@ -44,7 +44,8 @@ Antes de arrancar hay que completar `app/.env` y preparar Supabase (SQL, usuario
 
 - [`app/README.md`](app/README.md): instalación, configuración, corpus, Supabase, MCP, despliegue, pruebas y limitaciones.
 - [`BITACORA_PROYECTO.md`](BITACORA_PROYECTO.md): bitácora unificada de los tres cortes: decisiones, experimentos, errores, aportes y configuración vigente.
-- [`evidencias/`](evidencias/): resultados de las pruebas por fase y del corte 2.
+- [`app/presentacion_proyecto.pdf`](app/presentacion_proyecto.pdf): presentación del proyecto (fuente en [`presentacion/`](presentacion/)).
+- [`evidencias/`](evidencias/): resultados de las pruebas de cada fase y de los cortes 1 y 2.
 - [`notebooks/`](notebooks/): notebooks de los cortes anteriores.
 
 Licencia: MIT ([`LICENSE`](LICENSE)).

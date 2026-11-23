@@ -362,7 +362,7 @@ Las métricas de recuperación del corte 2 están en [`evidencias/corte2/`](../e
 
 ## Presentación y evidencias
 
-- Presentación: `app/presentacion_proyecto.pdf` (pendiente de la fase final).
+- Presentación: [`presentacion_proyecto.pdf`](presentacion_proyecto.pdf), 15 diapositivas. La fuente está en [`presentacion/presentacion_proyecto.html`](../presentacion/presentacion_proyecto.html) y el PDF se regenera con `.venv/bin/python presentacion/exportar_pdf.py` desde la raíz, con las dependencias de `requirements-e2e.txt` y Chromium de Playwright.
 - Evidencias por fase: [`evidencias/`](../evidencias/).
 - Notebooks de los cortes anteriores: [`notebooks/`](../notebooks/).
 
