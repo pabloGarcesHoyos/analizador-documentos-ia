@@ -294,23 +294,23 @@ La meta era Render Free con 512 MB. Con PyTorch no cupo ninguna configuración. 
 
 ## 6. Aportes de cada integrante
 
-Tomados de las bitácoras de cada clase. Lo que no tiene respaldo queda marcado.
+Tomados de las bitácoras de cada clase y de la evidencia de cada etapa. Donde la bitácora no separa aportes, el equipo confirmó el 2026-11-23 que fue trabajo conjunto.
 
 | Corte y clase | Pablo Garcés Hoyos | Axel Dereck Gutiérrez | Respaldo |
 |---|---|---|---|
 | Corte 1, Clase 02 | Entorno en Colab con GPU T4, Ollama y `gemma4:e2b`; ejecución de las seis configuraciones | Pregunta normal y ambigua; revisión manual de las seis respuestas; detección de la abstención duplicada; bitácora de la clase | Bitácora C02 (el notebook no está en el repositorio) |
 | Corte 1, Clase 03 | Secreto `GROQ_API_KEY`, salidas estructuradas y ejecución de los cinco casos (secciones 2, 7 y 8) | Esquema `AnalisisDocumento`, reglas de decisión y prueba negativa (secciones 3, 8 y 9) | Bitácora C03; [`notebooks/Clase_03_Demo_Groq.ipynb`](notebooks/Clase_03_Demo_Groq.ipynb) |
 | Corte 1, Clase 04 y entrega | Corrección de errores, los 11 casos de la matriz y las corridas mock y groq | Esquemas Pydantic del análisis y de los argumentos, refactorización de `ejecutar_pipeline` y ejecución de la suite | Bitácora C04; registro de equipo en las salidas de [`notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb`](notebooks/Clase_04_Analizador_Documentos_Herramientas.ipynb); [`evidencias/corte1/`](evidencias/corte1/) |
-| Corte 2, Clase 06 | La bitácora registra el trabajo a nombre de "Estudiante", sin separar integrantes: corpus de prueba D1 a D5, vectorización y búsqueda por similitud coseno. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C06 |
-| Corte 2, Clase 07 | La bitácora registra a los dos juntos en ingestión, fragmentación, metadatos e índice persistente, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C07 |
-| Corte 2, Clase 08 | La bitácora registra a los dos juntos en Supabase Vector, RAG con Groq, reglas de citación del prompt y depuración, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C08 |
-| Corte 2, Clase 09 | La bitácora registra a los dos juntos en BM25, RRF, reordenador, casos y validador, sin separar aportes. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C09 |
-| Corte 2, entrega del 2026-11-02 (notebook y presentación) | [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | |
+| Corte 2, Clase 06 | Trabajo conjunto: construcción del corpus de prueba D1 a D5, vectorización de los pasajes con `paraphrase-multilingual-MiniLM-L12-v2` y búsqueda por similitud coseno. La bitácora lo registra a nombre de "Estudiante"; el equipo confirmó que fue conjunto. | Trabajo conjunto (ver la columna de Pablo). | Bitácora C06; confirmación del equipo |
+| Corte 2, Clase 07 | Trabajo conjunto: pipeline de ingestión, estrategias de fragmentación, metadatos y persistencia del índice. | Trabajo conjunto (ver la columna de Pablo). | Bitácora C07; confirmación del equipo |
+| Corte 2, Clase 08 | Trabajo conjunto: integración de Supabase Vector (pgvector), orquestación del RAG con Groq, reglas de citación del prompt y depuración de los errores de validación. | Trabajo conjunto (ver la columna de Pablo). | Bitácora C08; confirmación del equipo |
+| Corte 2, Clase 09 | Trabajo conjunto: implementación de BM25, RRF y el reordenador cross-encoder, ajuste de las frases de evidencia del conjunto de prueba, corrección del validador de citas y exportación de las evidencias. | Trabajo conjunto (ver la columna de Pablo). | Bitácora C09; confirmación del equipo |
+| Corte 2, entrega del 2026-11-02 (notebook y presentación) | Trabajo conjunto: el notebook de la Clase 09 y la presentación en PDF de 5 páginas entregados el 2026-11-02. | Trabajo conjunto (ver la columna de Pablo). | [`notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb`](notebooks/Clase_09_Demo_Colab_Mejora_Evaluacion_RAG.ipynb); sección 5.1; confirmación del equipo |
 | Corte 2, versión del 2026-10-24 (Clase 10) | Integración del corte 1 con RAG, Supabase y Colab, ejecución de las corridas y revisión humana de A | Corpus 2.0, conjunto de 17 casos, clave de Groq de la corrida final y revisión humana de C | Bitácora C10; campo `revisor` en [`revision_humana_corrida_2.json`](evidencias/corte2/corrida_2_rag_v3/revision_humana_corrida_2.json) |
 | Corte 2, Clase 10 | Revisión doble independiente de D2, D4, B1 y B4 | La misma, por separado | Bitácora C10 |
-| Clase 11 | La bitácora registra a los dos juntos en prompts del agente, límites y pruebas de integración. [CONFIRMAR CON EL EQUIPO] | Igual. [CONFIRMAR CON EL EQUIPO] | Bitácora C11 |
-| Corte 3, aplicación | Los commits del repositorio están hechos con su cuenta. Reparto de componentes: [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | Historia de git |
-| Corte 3, publicación en Render y reinicio para la prueba de recuperación | [CONFIRMAR CON EL EQUIPO] | [CONFIRMAR CON EL EQUIPO] | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md) |
+| Clase 11 | Trabajo conjunto: configuración de los prompts del agente ReAct, ajuste de `MAX_OPERACIONES` y pruebas de integración. | Trabajo conjunto (ver la columna de Pablo). | Bitácora C11; confirmación del equipo |
+| Corte 3, aplicación | Trabajo conjunto: SQL y almacenamiento con RLS, sistema y servidor MCP, interfaz, carga del corpus, despliegue, pruebas y evidencias de las fases 0 a 6. Los commits quedaron en la cuenta de Pablo porque se trabajó en un mismo equipo. | Trabajo conjunto (ver la columna de Pablo). | Historia de git; [`evidencias/`](evidencias/); confirmación del equipo |
+| Corte 3, publicación en Render y reinicio para la prueba de recuperación | Trabajo conjunto: publicación del servicio en Render Free con `render.yaml` y reinicio del servicio para comprobar la recuperación de las conversaciones (prueba 2c). | Trabajo conjunto (ver la columna de Pablo). | [`evidencias/fase4/pruebas_url_publica.md`](evidencias/fase4/pruebas_url_publica.md); confirmación del equipo |
 | Corte 3, prueba ciega | Ejecución con Playwright en presencia de Axel | Escribió las 6 preguntas y lo esperado antes de usarlas; se ejecutaron con su usuario el 2026-11-23 | [`evidencias/fase4/preguntas_propias_axel.md`](evidencias/fase4/preguntas_propias_axel.md) |
 
 ## 7. Uso de asistentes
