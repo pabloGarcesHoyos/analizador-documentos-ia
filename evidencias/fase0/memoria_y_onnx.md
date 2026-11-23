@@ -47,3 +47,22 @@ Con las reducciones finales: opciones de onnxruntime sin arena y secuenciales co
 ## 4. Render Free
 
 El servicio corre con `RECUPERACION=C_DEMANDA`. Render Free no muestra la memoria; en Events no hubo reinicios por memoria durante las pruebas del 2026-11-22. La app escribe en el log, después de cada turno, una línea `turno ruta=… ms=… rss_mb=… pico_mb=…` para seguirla.
+
+### Log de Render del 2026-11-23
+
+Captura del log del servicio: [`log_render_2026-11-23.png`](log_render_2026-11-23.png). Las horas de la captura están en hora de Colombia (UTC-5). `rss_mb` es la memoria residente del proceso al terminar el turno, y `pico_mb`, el pico de memoria residente del proceso desde que arrancó (`getrusage`). `ms` es el tiempo del turno en el servidor.
+
+| Hora (UTC-5) | Instancia | Turno | ms | rss_mb | pico_mb |
+|---|---|---|---|---|---|
+| 22:39:06 | znnrm | mixta (prueba ciega, pregunta 1) | 30.568 | 299,9 | 477,9 |
+| 22:39:34 | znnrm | rag (pregunta 2) | 19.416 | 300,6 | 483,0 |
+| 22:40:10 | znnrm | mixta (pregunta 3) | 28.676 | 303,9 | 485,5 |
+| 22:40:20 | znnrm | pide_codigo (pregunta 4) | 2.139 | 304,1 | 485,5 |
+| 22:40:30 | znnrm | libre (pregunta 5) | 2.447 | 304,1 | 485,5 |
+| 22:40:41 | znnrm | documento (pregunta 6) | 2.658 | 304,1 | 485,5 |
+| 22:59:21 | f2dft | rag (prueba 5, informe con aprobación) | 18.914 | 326,5 | 506,7 |
+
+- El pico de memoria residente del proceso en Render llegó a 506,7 MB, en el primer turno RAG de una instancia recién desplegada. No es la misma métrica que los 497 MB de la sección 3, que son el pico del cgroup del contenedor emulado (incluye la caché de páginas); bajo emulación, el proceso principal quedaba en unos 362 MB en reposo. Lo que sí muestra el log es que el proceso llegó cerca de 512 MB y el servicio siguió atendiendo.
+- No hubo reinicios por memoria: el log no muestra cortes entre esos turnos. Los despliegues que aparecen (22:46, 22:51 y 23:03, hora de Colombia) son los de los commits `3fb5c5e`, `412e743` y `5d43e1c` según la API de despliegues de GitHub; los tres cambiaron archivos de `app/` (README o presentación), no código. La prueba 5 corrió en la instancia f2dft, del commit `412e743`.
+- A las 22:59:28 el log muestra `Secure MCP Filesystem Server running on stdio` con la carpeta permitida `/opt/render/project/src/app/informes`: el Filesystem MCP corrió en Render con su Node durante la prueba 5 de [`fase4/pruebas_url_publica.md`](../fase4/pruebas_url_publica.md).
+- El margen frente a 512 MB es pequeño. Si el servicio llegara a morir por memoria, la salida documentada es `RECUPERACION=B`.
