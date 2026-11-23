@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analizador de Documentos</title>
+<style>
+:root{--blue:#0072b9;--teal:#004f61;--cyan:#28b8ce;--ink:#12233b;--muted:#526479;--line:#d9e6ed;--violet:#6750a4;--soft:#edf4f8}
+@page{size:1600px 900px;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#eaf2f6}
+body{font-family:Aptos,"Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.slide{position:relative;width:1600px;height:900px;overflow:hidden;margin:0 auto 24px;background:radial-gradient(ellipse at 0 0,rgba(40,184,206,.10),transparent 42%),linear-gradient(135deg,#fff,#f3f9fc);break-after:page;page-break-after:always}
+@media print{.slide{margin:0}}
+.brand{position:absolute;top:18px;right:66px;display:flex;align-items:center;gap:13px;color:#00568e;font-size:14px;font-weight:750;letter-spacing:.075em}
+.brand-mark{width:44px;height:44px;display:grid;place-items:center;border:2px solid var(--blue);border-radius:50%;background:#fff;font-size:15px;font-weight:850;letter-spacing:-.05em}
+.presenta{position:absolute;top:26px;left:66px;font-size:15px;font-weight:750;letter-spacing:.06em;color:var(--teal);background:#fff;border:2px solid var(--line);border-radius:999px;padding:5px 16px}
+.content{position:absolute;top:84px;left:66px;right:66px;bottom:72px;display:flex;flex-direction:column;gap:22px}
+.eyebrow{margin:0 0 8px;color:var(--blue);font-size:16px;line-height:1.25;font-weight:800;letter-spacing:.105em;text-transform:uppercase}
+h1,h2,h3{margin:0;font-weight:750;color:var(--ink)}
+h2{font-size:44px;line-height:1.12;letter-spacing:-.025em}
+h3{font-size:26px;line-height:1.2;margin:0 0 12px;color:var(--blue)}
+.body{flex:1;min-height:0;font-size:25px;line-height:1.3}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.two-wide{display:grid;grid-template-columns:1.25fr 1fr;gap:36px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;align-items:start}
+.two-img{display:grid;grid-template-columns:1.5fr 1fr;gap:36px}
+.sep>*+*{border-left:2px solid var(--line);padding-left:34px}
+p{margin:0 0 14px}
+p:last-child{margin-bottom:0}
+ul,ol{margin:0;padding-left:28px}
+li{margin-bottom:10px;padding-left:4px}
+li:last-child{margin-bottom:0}
+strong{font-weight:750}
+code{font-family:Consolas,"Cascadia Mono",Menlo,monospace;font-size:.88em;color:var(--violet);white-space:nowrap}
+.card{background:#fff;border:2px solid var(--line);border-radius:10px;padding:20px 22px}
+.card h3{font-size:24px}
+.small{font-size:24px;line-height:1.32}
+.note{font-size:21px;line-height:1.3;color:var(--muted)}
+.term{background:var(--soft);border-left:5px solid var(--blue);padding:12px 18px;font-size:22px;line-height:1.3}
+.term p{margin:0 0 6px}
+table{border-collapse:collapse;width:100%;font-size:23px;line-height:1.25}
+th,td{padding:9px 13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--teal);font-weight:750;border-bottom:2px solid var(--blue)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.elegida td{background:#e3f1f8;font-weight:750}
+.ok{color:#1d6b3a;font-weight:750}
+.falla{color:#a3381f;font-weight:750}
+.pend{color:#7a5a00;font-weight:750}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.step{background:#fff;border:2px solid var(--line);border-top:6px solid var(--blue);border-radius:8px;padding:16px 16px;font-size:23px;line-height:1.3}
+.step b{display:block;color:var(--blue);font-size:25px;margin-bottom:8px}
+.shot{border:2px solid var(--line);border-radius:8px;background:#fff;overflow:hidden}
+.shot img{display:block;width:100%}
+.crop{position:relative;overflow:hidden;border:2px solid var(--line);border-radius:8px;background:#fff}
+.crop img{position:absolute;display:block}
+.slide-footer{position:absolute;left:0;right:0;bottom:0;height:44px;border-top:3px solid var(--blue);padding:0 42px;display:flex;align-items:center;justify-content:space-between;color:#fff;background:var(--teal);font-size:14px;font-weight:700;letter-spacing:.025em}
+.cover .content{top:150px;left:96px;right:96px;bottom:112px;justify-content:space-between}
+.cover h1{font-size:80px;line-height:1.08;margin:0 0 24px;letter-spacing:-.02em}
+.cover-subtitle{font-size:38px;line-height:1.25;color:var(--blue);margin:0}
+.cover-author{color:var(--muted);font-size:25px;line-height:1.4}
+.cover-author p{margin:0 0 6px}
+.big{font-size:30px;line-height:1.3}
+.url{font-family:Consolas,Menlo,monospace;font-size:27px;color:var(--blue)}
+</style>
+</head>
+<body>
+
+<section class="slide cover">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presentan: Pablo y Axel</div>
+<div class="content">
+<header>
+<p class="eyebrow">Entrega final del proyecto, tercer corte</p>
+<h1>Analizador de Documentos</h1>
+<p class="cover-subtitle">Políticas con fuentes citadas, estado de trámites e informes con aprobación, en una aplicación web</p>
+</header>
+<div class="cover-author">
+<p>Pablo Garcés Hoyos y Axel Dereck Gutiérrez</p>
+<p>Inteligencia Artificial Generativa y Sistemas Inteligentes</p>
+<p>Profesor: Robert Garcia Rey. EAM 2026-II</p>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>01 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Problema y usuarios</p><h2>Responder solo con lo que está escrito o registrado</h2></header>
+<div class="body two sep">
+<div>
+<h3>El problema</h3>
+<p>Un área administrativa recibe facturas, contratos y documentos de identificación. Quien los revisa necesita saber:</p>
+<ul>
+<li>qué exige cada política;</li>
+<li>en qué estado va un trámite;</li>
+<li>si un documento entregado cumple lo mínimo.</li>
+</ul>
+<p style="margin-top:16px">Un <strong>modelo de lenguaje</strong> (un programa que genera texto) sin control inventa requisitos, plazos y estados.</p>
+</div>
+<div>
+<h3>Usuarios y lo que obtienen</h3>
+<p>Personas del área, cada una con su propia cuenta.</p>
+<ul>
+<li>Respuestas con la fuente de cada frase.</li>
+<li>El estado de un documento <code>DOC-XXXX</code> o una solicitud <code>SOL-XXXX</code>.</li>
+<li>La clasificación de un documento pegado y los campos que le faltan.</li>
+<li>Un informe en Markdown, solo si lo aprueban.</li>
+<li>Su historial, privado.</li>
+</ul>
+<p class="note" style="margin-top:16px">Fuera de alcance: no registra, aprueba, firma, modifica ni elimina nada. Esas peticiones se rechazan.</p>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>02 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Fuentes de información</p><h2>Tres fuentes, todas ficticias y sin datos personales</h2></header>
+<div class="body three">
+<div class="card">
+<h3>Corpus de políticas</h3>
+<p class="small">4 documentos, versión 2.0: facturación, contratos, documentos de identificación y seguimiento y seguridad.</p>
+<p class="small">Se dividen en <strong>20 fragmentos</strong> por párrafos, de hasta 120 <strong>tokens</strong> (pedazos de palabra que procesa el modelo), para no partir una regla de su consecuencia.</p>
+<p class="small">Se guardan en Supabase con sus vectores.</p>
+</div>
+<div class="card">
+<h3>Registro de expedientes</h3>
+<p class="small">5 expedientes: <code>DOC-1001</code> a <code>DOC-1003</code>, <code>SOL-1001</code> y <code>SOL-1002</code>, cada uno con su estado.</p>
+<p class="small">Solo se lee mediante una herramienta. El modelo nunca escribe un estado: la frase la arma el programa con el dato devuelto.</p>
+</div>
+<div class="card">
+<h3>Texto del usuario</h3>
+<p class="small">Si el usuario pega un documento, el clasificador lo etiqueta como factura, contrato, identificación o desconocido.</p>
+<p class="small">Indica los campos que faltan y si requiere revisión humana, con un contrato de salida validado.</p>
+</div>
+</div>
+<p class="note">Archivos: <code>app/corpus/</code> con su manifiesto de permisos, <code>app/servidor_mcp.py</code> y el contrato <code>AnalisisDocumento</code> en <code>app/sistema.py</code>.</p>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>03 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Recuperación</p><h2>Cómo una pregunta encuentra sus pasajes</h2></header>
+<div class="term"><p><strong>RAG</strong> (generación aumentada por recuperación): antes de responder se buscan los pasajes pertinentes del corpus y el modelo solo puede usar esos. Cada pasaje entregado lleva una etiqueta <code>[F1]</code>, <code>[F2]</code> o <code>[F3]</code>.</p></div>
+<div class="body steps">
+<div class="step"><b>1. Embeddings</b>Cada texto se convierte en un vector de 384 números. Textos con significado parecido quedan cerca: es la búsqueda semántica.</div>
+<div class="step"><b>2. BM25</b>Búsqueda por palabras. Encuentra términos exactos como "NIT" o un código que la búsqueda semántica puede pasar por alto.</div>
+<div class="step"><b>3. Fusión RRF</b>Une las dos listas según la posición de cada pasaje en cada una, sin mezclar puntajes de escalas distintas.</div>
+<div class="step"><b>4. Reordenador</b>Un modelo que lee la pregunta junto con cada uno de los 10 candidatos y los puntúa por pares.</div>
+<div class="step"><b>5. Tres pasajes</b>Los 3 mejores llegan al modelo generativo con su documento, sección y versión.</div>
+</div>
+<p class="note">Modelos: <code>paraphrase-multilingual-MiniLM-L12-v2</code> para embeddings y <code>mmarco-mMiniLMv2-L12-H384-v1</code> para reordenar. Código: <code>app/recuperacion.py</code>.</p>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>04 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Decisión de recuperación</p><h2>Se eligió C con una regla escrita antes de ver los datos</h2></header>
+<div class="body two-wide">
+<div>
+<table>
+<thead><tr><th>Opción</th><th class="num">Cobertura</th><th class="num">MRR</th><th class="num">Recall@3</th><th class="num">Cobertura reserva</th><th class="num">Mediana</th></tr></thead>
+<tbody>
+<tr><td>A: semántica</td><td class="num">0,875</td><td class="num">0,875</td><td class="num">0,875</td><td class="num">0,75</td><td class="num">136 ms</td></tr>
+<tr><td>B: semántica y BM25 con RRF</td><td class="num">0,812</td><td class="num">0,792</td><td class="num">0,812</td><td class="num">1,00</td><td class="num">137 ms</td></tr>
+<tr class="elegida"><td>C: B con reordenador</td><td class="num">0,938</td><td class="num">0,938</td><td class="num">0,938</td><td class="num">1,00</td><td class="num">865 ms</td></tr>
+</tbody>
+</table>
+<p class="small" style="margin-top:16px">Regla: mayor cobertura; si empatan, mayor MRR; luego Recall@3; luego la más simple. 8 casos de desarrollo para elegir y 4 de reserva, abiertos una sola vez.</p>
+<p class="note">Fuente: <code>evidencias/corte2/corrida_2_rag_v3/evaluacion/</code>.</p>
+</div>
+<div>
+<div class="term">
+<p><strong>Cobertura:</strong> parte de la información necesaria que aparece en los 3 pasajes.</p>
+<p><strong>MRR:</strong> qué tan arriba sale el primer pasaje correcto (1 es el primero).</p>
+<p><strong>Recall@3:</strong> parte de los pasajes relevantes que entra en los 3 primeros.</p>
+</div>
+<h3 style="margin-top:20px">En 512 MB de memoria</h3>
+<p class="small">Los mismos modelos corren en <strong>ONNX</strong> con números de 8 bits, sin PyTorch. Las métricas son idénticas; 42 de 51 selecciones quedan en el mismo orden.</p>
+<p class="small">Cada modelo se carga solo durante la consulta: pico de 497 MB.</p>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>05 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Recorrido de una pregunta</p><h2>Un enrutador por reglas elige la ruta; el modelo solo redacta</h2></header>
+<div class="body two-wide">
+<div>
+<table>
+<thead><tr><th>Ruta</th><th>Ejemplo de entrada</th><th class="num">Llamadas al modelo</th></tr></thead>
+<tbody>
+<tr><td><code>rechazo</code></td><td>Elimina el documento DOC-1001</td><td class="num">0</td></tr>
+<tr><td><code>estado</code></td><td>¿En qué estado está DOC-1001?</td><td class="num">0</td></tr>
+<tr><td><code>mixta</code></td><td>¿Qué requisitos tiene una factura y en qué estado está DOC-1001?</td><td class="num">1 o 2</td></tr>
+<tr><td><code>pide_codigo</code></td><td>¿Cómo va la revisión de mi documento?</td><td class="num">0</td></tr>
+<tr><td><code>rag</code></td><td>¿Qué datos debe traer una factura?</td><td class="num">1 o 2</td></tr>
+<tr><td><code>documento</code></td><td>Texto de una factura pegado</td><td class="num">1</td></tr>
+<tr><td><code>libre</code></td><td>Hola</td><td class="num">1</td></tr>
+</tbody>
+</table>
+</div>
+<div>
+<div class="term">
+<p><strong>Groq:</strong> servicio que ejecuta el modelo <code>openai/gpt-oss-20b</code>.</p>
+<p><strong>Esquema estricto:</strong> el modelo devuelve un JSON con forma fija, que el programa valida antes de usarlo.</p>
+</div>
+<p class="small" style="margin-top:18px">Una segunda llamada solo ocurre si la primera salida no pasa la validación: hay un único reintento con la causa del rechazo.</p>
+<p class="small">Si vuelve a fallar, se muestra "Error de validación" y nunca un texto sin validar.</p>
+<p class="note">Código: <code>enrutar</code> y <code>atender</code> en <code>app/sistema.py</code>.</p>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>06 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Flujo predefinido frente a agente libre</p><h2>La ruta se decide con reglas porque se puede</h2></header>
+<div class="body two sep">
+<div>
+<h3>Dos formas de coordinar</h3>
+<p><strong>Agente libre:</strong> el modelo decide en cada paso qué herramienta usar y cuándo responder.</p>
+<p><strong>Flujo predefinido:</strong> reglas del programa eligen la ruta; el modelo solo redacta la parte documental.</p>
+<p class="small">Fallas medidas del agente con los mismos casos:</p>
+<ul class="small">
+<li>terminaba sin consultar un código que el usuario sí escribió;</li>
+<li>redactaba o parafraseaba estados;</li>
+<li>ponía citas fuera del texto.</li>
+</ul>
+</div>
+<div>
+<table>
+<thead><tr><th>Medición</th><th class="num">Agente</th><th class="num">Flujo</th></tr></thead>
+<tbody>
+<tr><td>Regresión del corte 1 (11 casos)</td><td class="num">5, 7 y 8 en tres versiones</td><td class="num">10</td></tr>
+<tr><td>Reserva escrita antes de cada versión (6 casos nuevos cada vez)</td><td class="num">3 y 2</td><td class="num">5</td></tr>
+<tr><td>Tokens en los 11 casos</td><td class="num">20.805</td><td class="num">2.941</td></tr>
+</tbody>
+</table>
+<p class="note" style="margin-top:14px">Fuente: <code>evidencias/fase2/</code>. Cada reserva se corrió una sola vez.</p>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>07 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Herramientas y MCP</p><h2>Una herramienta para leer y otra para escribir, con permiso</h2></header>
+<div class="term"><p><strong>MCP</strong> (Model Context Protocol): forma estándar en que un programa ofrece herramientas. Aquí cada servidor corre como proceso hijo y se comunica por su entrada y salida estándar (<strong>stdio</strong>).</p></div>
+<div class="body two sep">
+<div>
+<h3>MCP propio de estado</h3>
+<ul class="small">
+<li>Herramienta <code>consultar_estado_solicitud</code>, solo lectura.</li>
+<li>Acepta solo códigos con el formato <code>DOC-0000</code> o <code>SOL-0000</code>, y como máximo dos por turno.</li>
+<li>Devuelve código, si existe, registro y fuente.</li>
+<li>Si el servidor falla, la respuesta dice "Error técnico", distinto de "no existe en el registro".</li>
+</ul>
+</div>
+<div>
+<h3>Filesystem MCP para el informe</h3>
+<ul class="small">
+<li>Paquete oficial 2.2.0, con una sola carpeta permitida y solo escritura.</li>
+<li>La interfaz muestra el contenido y el destino; el usuario pulsa Aprobar o Rechazar.</li>
+<li>El código comprueba la aprobación y la huella SHA-256 (resumen único del contenido) y registra una sola decisión por mensaje.</li>
+<li>Un doble clic deja un solo archivo.</li>
+</ul>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>08 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Persistencia, Auth y separación por usuario</p><h2>Cada historial es privado, aunque se conozca su identificador</h2></header>
+<div class="body two-wide">
+<div>
+<div class="term">
+<p><strong>Supabase:</strong> base de datos Postgres en la nube con inicio de sesión (<strong>Auth</strong>).</p>
+<p><strong>Token:</strong> credencial temporal que recibe quien inicia sesión.</p>
+<p><strong>RLS</strong> (seguridad a nivel de fila): reglas de la base que filtran cada fila según el usuario del token.</p>
+</div>
+<ul class="small" style="margin-top:16px">
+<li>La sesión guarda solo los tokens, en el servidor. Cada operación valida al usuario con <code>auth.get_user</code>.</li>
+<li>Tablas <code>conversaciones</code>, <code>mensajes</code> y <code>acciones_informe</code>, todas con RLS.</li>
+<li>Se guarda la conversación completa; al modelo van los últimos 4 turnos.</li>
+<li>El historial sobrevive al cierre de sesión y al reinicio del servidor.</li>
+</ul>
+</div>
+<div>
+<p class="small"><strong>Prueba en la URL pública:</strong> B no ve ninguna de las 218 conversaciones de A y del usuario de demostración. Con el <strong>UUID</strong> (identificador) de una conversación de A en la URL, no se abre; una llamada directa responde 400 sin datos.</p>
+<div class="shot"><img src="../evidencias/fase4/capturas/03_b_url_con_uuid_de_a.png" alt="Vista de B con la URL de una conversación de A: solo aparecen conversaciones de B y el chat está vacío"></div>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>09 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Una ejecución real en la URL pública</p><h2>Pregunta mixta: requisitos con [F#] y estado con [T#]</h2></header>
+<div class="body two-img">
+<div class="crop" style="height:496px"><img src="../evidencias/fase4/capturas/02a_mixta_antes_del_reinicio.png" alt="Respuesta a la pregunta mixta con la frase del registro citada como T1 y los requisitos citados como F1 y F2" style="width:1303px;left:-373px;top:-53px"></div>
+<div>
+<p class="small"><strong>Entrada:</strong> "¿Qué requisitos tiene una factura y en qué estado está DOC-1001?"</p>
+<ol class="small">
+<li>El enrutador ve un código y una pregunta de política: ruta mixta.</li>
+<li>El MCP consulta DOC-1001. El programa escribe la frase del estado con <code>[T1]</code>.</li>
+<li>Solo "¿Qué requisitos tiene una factura" va a la recuperación. Salen dos pasajes del manual de facturación, <code>[F1]</code> y <code>[F2]</code>.</li>
+<li>El modelo devuelve frases con sus citas. El programa comprueba que cada cita sea de este turno y que ninguna frase afirme el estado.</li>
+<li>Se guarda en Supabase y se ve igual después de reiniciar el servicio.</li>
+</ol>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>10 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Seguridad</p><h2>Controles en el código y en la base, no en el modelo</h2></header>
+<div class="body two sep">
+<div>
+<h3>Credenciales y acceso</h3>
+<ul class="small">
+<li>Sin clave administrativa: solo la clave publicable de Supabase y la sesión de cada usuario.</li>
+<li>Ningún cliente compartido entre usuarios.</li>
+<li>El corpus lo leen solo los usuarios autorizados en <code>lectores_corpus</code>.</li>
+<li>Secretos solo en variables de entorno; las trazas filtran tokens, claves y correos.</li>
+</ul>
+</div>
+<div>
+<h3>Superficie y respuestas</h3>
+<ul class="small">
+<li>La API directa de Gradio está cerrada: sus rutas responden 404 y los eventos sin sesión válida responden 400.</li>
+<li>Una cita <code>[F#]</code> debe venir del RAG del turno y una <code>[T#]</code>, de una herramienta. Si no corresponde, la salida se rechaza; nunca se agregan citas.</li>
+<li>Las órdenes de eliminar, aprobar o firmar se rechazan sin llamar al modelo.</li>
+</ul>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>11 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Resultados de evaluación</p><h2>Lo que pasó y lo que falló</h2></header>
+<div class="body">
+<table>
+<thead><tr><th>Prueba</th><th>Resultado</th><th>Qué falló</th></tr></thead>
+<tbody>
+<tr><td>Regresión: 11 casos del corte 1</td><td class="ok">10 de 11</td><td><code>normal_01</code>: el clasificador pide aclaración porque la factura no trae NIT ni impuestos</td></tr>
+<tr><td>Reserva 3: 6 casos escritos antes del flujo</td><td class="ok">5 de 6</td><td>"¿Puedo pedirle al analizador que registre una factura por mí?" terminó en "Error de validación"</td></tr>
+<tr><td>Revisión humana de las respuestas de C (corte 2)</td><td class="ok">14 de 17 fieles</td><td>3 respuestas con afirmaciones sin respaldo</td></tr>
+<tr><td>Interfaz en el navegador</td><td class="ok">15 de 15 pasos</td><td></td></tr>
+<tr><td>URL pública: sin evidencia, reinicio, aislamiento y falla técnica</td><td class="ok">5 de 5</td><td>La falla técnica se probó en local</td></tr>
+<tr><td>Aislamiento entre usuarios contra Supabase real</td><td class="ok">8 de 8</td><td></td></tr>
+<tr><td>Prueba ciega: 6 preguntas de Axel, no vistas por quien escribió el enrutador</td><td class="pend">Pendiente</td><td>Se registrará tal como salga</td></tr>
+</tbody>
+</table>
+<p class="note" style="margin-top:14px">Lo esperado se escribió antes de cada corrida y no se cambió después. Evidencias en <code>evidencias/</code>.</p>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>12 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Despliegue</p><h2>Render Free con 512 MB y el historial en Supabase</h2></header>
+<div class="body two sep">
+<div>
+<h3>Cómo se publica</h3>
+<ul class="small">
+<li><strong>Render:</strong> alojamiento web; el plan gratuito duerme el servicio tras 15 minutos sin uso.</li>
+<li>Configuración en <code>render.yaml</code>, con la carpeta <code>app</code> como raíz.</li>
+<li>Al construir: instala dependencias fijas, descarga los modelos y verifica su huella, e instala el Filesystem MCP.</li>
+<li>Los secretos se escriben en el panel, nunca en el repositorio.</li>
+</ul>
+</div>
+<div>
+<h3>Qué se comprobó</h3>
+<ul class="small">
+<li>Recuperación C con cada modelo cargado solo durante la consulta, sin reinicios por memoria.</li>
+<li>Tras reiniciar el servicio, las conversaciones se ven idénticas.</li>
+<li>Una línea por turno en el log registra la memoria, porque el plan no la muestra.</li>
+<li>Una respuesta RAG tardó 24 s en Render.</li>
+</ul>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>13 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Pablo</div>
+<div class="content">
+<header><p class="eyebrow">Limitaciones y mejoras pendientes</p><h2>Lo que todavía no resuelve</h2></header>
+<div class="body two sep">
+<div>
+<h3>Limitaciones</h3>
+<ul class="small">
+<li>El enrutador es por reglas: una pregunta con otra forma puede caer en la ruta libre.</li>
+<li>Sus reglas se escribieron conociendo los casos de reserva; falta la prueba ciega.</li>
+<li>El modelo no es determinista: una corrida aislada no basta para comparar versiones.</li>
+<li>Latencia en Render y picos de unos 2 s al validar la sesión.</li>
+<li>El cupo diario gratuito de Groq limita las pruebas.</li>
+<li>Los informes no se conservan en el servidor.</li>
+</ul>
+</div>
+<div>
+<h3>Mejoras pendientes</h3>
+<ul class="small">
+<li>Correr la prueba ciega y repetir cada caso varias veces, evaluando por mayoría.</li>
+<li>Comprobar de forma automática que cada frase esté contenida en el pasaje que cita.</li>
+<li>Guardar los informes aprobados en un almacenamiento persistente.</li>
+<li>Ampliar el corpus y el conjunto de evaluación con casos nuevos.</li>
+</ul>
+</div>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>14 / 15</span></footer>
+</section>
+
+<section class="slide">
+<div class="brand"><span>INSTITUCIÓN UNIVERSITARIA EAM</span><span class="brand-mark">EAM</span></div>
+<div class="presenta">Presenta: Axel</div>
+<div class="content">
+<header><p class="eyebrow">Aplicación y repositorio</p><h2>Pruébelo y revise la evidencia</h2></header>
+<div class="body">
+<p class="big"><strong>Aplicación publicada</strong></p>
+<p class="url">https://analizador-documentos-v871.onrender.com</p>
+<p class="big" style="margin-top:28px"><strong>Repositorio</strong></p>
+<p class="url">https://github.com/pabloGarcesHoyos/analizador-documentos-ia</p>
+<ul class="small" style="margin-top:28px">
+<li><code>app/README.md</code>: instalación desde un clon limpio, configuración, despliegue y pruebas.</li>
+<li><code>BITACORA_PROYECTO.md</code>: decisiones, experimentos y errores de los tres cortes.</li>
+<li><code>evidencias/</code>: resultados de cada prueba con lo esperado y lo observado.</li>
+</ul>
+<p class="note" style="margin-top:20px">La primera visita puede tardar cerca de un minuto mientras el servicio despierta.</p>
+</div>
+</div>
+<footer class="slide-footer"><span>ANALIZADOR DE DOCUMENTOS | EAM 2026-II</span><span>15 / 15</span></footer>
+</section>
+
+</body>
+</html>
